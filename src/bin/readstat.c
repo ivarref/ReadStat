@@ -23,6 +23,8 @@
 #define RS_FORMAT_POR           0x04
 #define RS_FORMAT_SAS_DATA      0x08
 #define RS_FORMAT_SAS_CATALOG   0x10
+#define RS_FORMAT_CSV           0x20
+#define RS_FORMAT_JSON          0x40
 
 #define RS_FORMAT_CAN_WRITE     (RS_FORMAT_DTA | RS_FORMAT_SAV)
 
@@ -47,8 +49,17 @@ int format(const char *filename) {
     if (strncmp(filename + len - 4, ".por", 4) == 0)
         return RS_FORMAT_POR;
 
+    if (strncmp(filename + len - 4, ".csv", 4) == 0)
+        return RS_FORMAT_CSV;
+
     if (len < sizeof(".sas7bdat")-1)
         return RS_FORMAT_UNKNOWN;
+    
+    if (len < sizeof(".json")-1)
+        return RS_FORMAT_UNKNOWN;
+
+    if (strncmp(filename + len - 5, ".json", 5) == 0)
+        return RS_FORMAT_JSON;
 
     if (strncmp(filename + len - 9, ".sas7bdat", 9) == 0)
         return RS_FORMAT_SAS_DATA;
@@ -74,12 +85,15 @@ const char *format_name(int format) {
 
     if (format == RS_FORMAT_SAS_CATALOG)
         return "SAS catalog file (SAS7BCAT)";
+    
+    if (format == RS_FORMAT_CSV)
+        return "CSV (NSD)";
 
     return "Unknown";
 }
 
 int is_catalog(const char *filename) {
-    return (format(filename) == RS_FORMAT_SAS_CATALOG);
+    return (format(filename) == RS_FORMAT_SAS_CATALOG) || (format(filename) == RS_FORMAT_JSON);
 }
 
 int can_read(const char *filename) {
@@ -182,6 +196,10 @@ readstat_error_t parse_file(readstat_parser_t *parser, const char *input_filenam
         error = readstat_parse_sas7bdat(parser, input_filename, ctx);
     } else if (input_format == RS_FORMAT_SAS_CATALOG) {
         error = readstat_parse_sas7bcat(parser, input_filename, ctx);
+    } else if (input_format == RS_FORMAT_CSV) {
+        error = readstat_parse_csv(parser, input_filename, ctx);
+    } else {
+        error = READSTAT_ERROR_UNSUPPORTED_CHARSET;
     }
 
     return error;
@@ -249,7 +267,8 @@ static int convert_file(const char *input_filename, const char *catalog_filename
     }
     if (error != READSTAT_OK)
         goto cleanup;
-
+    
+    fprintf(stdout, ">>> start pass two\n");
     // Pass 2 - Parse full file
     readstat_set_error_handler(pass2_parser, &handle_error);
     readstat_set_info_handler(pass2_parser, &handle_info);
@@ -389,7 +408,7 @@ int main(int argc, char** argv) {
 
     if (output_filename)
         return convert_file(input_filename, catalog_filename, output_filename, modules, modules_count);
-
+        
     return dump_file(input_filename);
 }
 

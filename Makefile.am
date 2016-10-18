@@ -68,6 +68,8 @@ noinst_HEADERS = \
        src/bin/module.h \
        src/bin/module_util.h \
        src/bin/modules/mod_csv.h \
+	   src/bin/modules/jsmn.h \
+	   src/bin/modules/json_metadata.h \
        src/bin/modules/mod_readstat.h \
        src/bin/modules/mod_xlsx.h \
        src/test/test_buffer.h \
@@ -85,16 +87,20 @@ readstat_SOURCES = \
 	src/bin/readstat.c \
 	src/bin/module_util.c \
 	src/bin/modules/mod_csv.c \
+	src/bin/modules/jsmn.c \
+	src/bin/modules/json_metadata.c \
 	src/bin/modules/mod_readstat.c
 
 readstat_LDADD = libreadstat.la
-readstat_CFLAGS =
+readstat_CFLAGS = -Wall -pedantic-errors -std=c99
 
 if HAVE_XLSXWRITER
 readstat_SOURCES += src/bin/modules/mod_xlsx.c
 readstat_LDADD += -lxlsxwriter
 readstat_CFLAGS += -DHAVE_XLSXWRITER=1
 endif
+
+readstat_LDADD += -lcsv
 
 check_PROGRAMS = \
 	test_readstat
