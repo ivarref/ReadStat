@@ -26,3 +26,8 @@ readstat
 test-driver
 autom4te.cache/*
 output.*
+test-suite.log
+test_readstat
+test_readstat.log
+test_readstat.trs
+.vscode/

@@ -13,6 +13,10 @@
                 {
                     "code": 2,
                     "label": "Female"
+                },
+                {
+                    "code": 9,
+                    "label": "No answer"
                 }
             ],
             "missing": {

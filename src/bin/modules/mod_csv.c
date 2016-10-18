@@ -10,6 +10,7 @@
 #include "../../readstat.h"
 #include "../module_util.h"
 #include "../module.h"
+#include "produce_csv_column_value.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -18,17 +19,6 @@ typedef struct mod_csv_ctx_s {
     long var_count;
 } mod_csv_ctx_t;
 
-typedef struct csv_metadata {
-    long rows;
-    long columns;
-    long _columns;
-    size_t* column_width;
-    int open_row;
-    readstat_parser_t *parser;
-    void *user_ctx;
-    readstat_variable_t* variables;
-    struct json_metadata* json_md;
-} csv_metadata;
 
 static int accept_file(const char *filename);
 static void *ctx_init(const char *filename);
@@ -133,17 +123,18 @@ void produce_column_header(void *s, size_t len, void *data) {
     var->type = coltype;
     if (coltype == READSTAT_TYPE_STRING) {
         var->alignment = READSTAT_ALIGNMENT_LEFT;
-        fprintf(stdout, "readstat_type_string\n");
     } else if (coltype == READSTAT_TYPE_DOUBLE) {
         var->alignment = READSTAT_ALIGNMENT_RIGHT;
-        fprintf(stdout, "readstat_type_double\n");
     } else {
         fprintf(stderr, "unsupported column type: %x\n", coltype);
         exit(EXIT_FAILURE);
     }
     
     var->index = c->columns;
-    memcpy(var->name, column, len); 
+    snprintf(var->name, sizeof(var->name)-1, "%.*s", (int)len, column);
+    copy_variable_property(c->json_md, column, "label", var->label, sizeof(var->label));
+    // static int handle_value_label(const char *val_labels, readstat_value_t value, const char *label, void *ctx);
+    //fprintf(stdout, "size of var->label: %d\n", sizeof(var->label));
     // typedef struct readstat_variable_s {
     //     readstat_type_t         type;
     //     int                     index;
@@ -159,67 +150,39 @@ void produce_column_header(void *s, size_t len, void *data) {
     //     readstat_alignment_t    alignment;
     //     int                     display_width;
     // } readstat_variable_t;
-    const char *val_labels = NULL;
-    c->parser->variable_handler(c->columns, var, val_labels, c->user_ctx);
-}
 
-void produce_column_value(void *s, size_t len, void *data) {
-    struct csv_metadata *c = (struct csv_metadata *)data;
-    readstat_variable_t *var = &c->variables[c->columns];
-    int obs_index = c->rows - 1; // TODO: ???
-        // typedef struct readstat_value_s {
-    //     union {
-    //         float       float_value;
-    //         double      double_value;
-    //         int8_t      i8_value;
-    //         int16_t     i16_value;
-    //         int32_t     i32_value;
-    //         const char *string_value;
-    //     } v;
-    //     readstat_type_t         type;
-    //     char                    tag;
-    //     unsigned int            is_system_missing:1;
-    //     unsigned int            is_tagged_missing:1;
-    // } readstat_value_t;
-    if (len == 0) {
-        readstat_value_t value = {
-            .is_system_missing = 1,
-            .is_tagged_missing = 0,
-            .type = var->type
-        };
-        c->parser->value_handler(obs_index, var, value, c->user_ctx);
+    // typedef struct readstat_label_set_s {
+    //     readstat_type_t            type;
+    //     char                        name[256];
+
+    //     readstat_value_label_t     *value_labels;
+    //     long                        value_labels_count;
+    //     long                        value_labels_capacity;
+
+    //     void                       *variables;
+    //     long                        variables_count;
+    //     long                        variables_capacity;
+    // } readstat_label_set_t;
+
+    // typedef struct readstat_value_label_s {
+    //     double      double_key;
+    //     int32_t     int32_key;
+    //     char        tag;
+    //     char       *string_key;
+    //     size_t      string_key_len;
+    //     char       *label;
+    //     size_t      label_len;
+    // } readstat_value_label_t;
+
+    // (const char *val_labels, readstat_value_t value, const char *label, void *ctx)
+
+    if (c->parser->value_label_handler) {
+        fprintf(stdout, "woof\n");
     }
-    else if (var->type == READSTAT_TYPE_STRING) {
-        readstat_value_t value = {
-            .is_system_missing = 0,
-            .is_tagged_missing = 0,
-            .v = { .string_value = s },
-            .type = READSTAT_TYPE_STRING
-        };
-        c->parser->value_handler(obs_index, var, value, c->user_ctx);
-    } else if (var->type == READSTAT_TYPE_DOUBLE) {
-        double vv = strtod(s, NULL); // TODO handle malformatted data
-        if (is_missing_double(c->json_md, var->name, vv)) {
-            fprintf(stderr, "missing value %g\n", vv);
-            readstat_value_t value = {
-                .is_system_missing = 0,
-                .is_tagged_missing = 1,
-                .v = { .double_value = vv },
-                .type = READSTAT_TYPE_DOUBLE
-            };
-            c->parser->value_handler(obs_index, var, value, c->user_ctx);
-        } else {
-            readstat_value_t value = {
-                .is_system_missing = 0,
-                .is_tagged_missing = 0,
-                .v = { .double_value = vv },
-                .type = READSTAT_TYPE_DOUBLE
-            };
-            c->parser->value_handler(obs_index, var, value, c->user_ctx);
-        }
-    } else {
-        fprintf(stderr, "unhandled column type: %x\n", var->type);
-        exit(EXIT_FAILURE);
+
+    const char *val_labels = NULL;
+    if (c->parser->variable_handler) {
+        c->parser->variable_handler(c->columns, var, val_labels, c->user_ctx);
     }
 }
 
@@ -229,10 +192,10 @@ void csv_metadata_cell(void *s, size_t len, void *data)
     if (c->rows == 0) {
         c->variables = realloc(c->variables, (c->columns+1) * sizeof(readstat_variable_t));
     }
-    if (c->rows == 0 && c->parser->variable_handler) {
+    if (c->rows == 0) {
         produce_column_header(s, len, data);
     } else if (c->rows >= 1 && c->parser->value_handler) {
-        produce_column_value(s, len, data);
+        produce_csv_column_value(s, len, data);
     }
     if (c->rows >= 1) {
         size_t w = c->column_width[c->columns];

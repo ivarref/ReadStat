@@ -72,6 +72,21 @@ jsmntok_t* find_variable_property(const char *js, jsmntok_t *t, const char* varn
     return 0;
 }
 
+char* copy_variable_property(struct json_metadata* md, const char* varname, const char* property, char* dest, size_t maxsize) {
+	jsmntok_t* tok = find_variable_property(md->js, md->tok, varname, property);
+	if (tok == NULL) {
+		return NULL;
+	}
+	
+	int len = tok->end - tok->start;
+	if (len == 0) {
+		return NULL;
+	}
+	snprintf(dest, maxsize-1, "%.*s", len, md->js+tok->start);
+
+	return dest;
+}
+
 int is_missing_double(struct json_metadata* md, char* varname, double v) {
 	jsmntok_t* missing = find_variable_property(md->js, md->tok, varname, "missing");
 	if (!missing) {

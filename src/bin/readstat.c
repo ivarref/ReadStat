@@ -262,6 +262,7 @@ static int convert_file(const char *input_filename, const char *catalog_filename
         error = parse_file(pass1_parser, catalog_filename, RS_FORMAT_SAS_CATALOG, rs_ctx);
         error_filename = catalog_filename;
     } else {
+        fprintf(stdout, ">>> start pass one %x\n", pass1_parser->value_label_handler);
         error = parse_file(pass1_parser, input_filename, input_format, rs_ctx);
         error_filename = input_filename;
     }
