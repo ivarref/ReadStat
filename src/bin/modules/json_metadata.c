@@ -96,7 +96,7 @@ char* copy_variable_property(struct json_metadata* md, const char* varname, cons
 	return dest;
 }
 
-int is_missing_double(struct json_metadata* md, char* varname, double v) {
+int missing_double_idx(struct json_metadata* md, char* varname, double v) {
 	jsmntok_t* missing = find_variable_property(md->js, md->tok, varname, "missing");
 	if (!missing) {
 		return 0;
@@ -112,10 +112,15 @@ int is_missing_double(struct json_metadata* md, char* varname, double v) {
 		jsmntok_t* value = values+j;
 		int len = value->end - value->start;
 		char tmp[1024];
-		sprintf(tmp, "%.*s", len, md->js + value->start);
-		double vv = strtod(tmp, NULL);
+		snprintf(tmp, sizeof(tmp)-1, "%.*s", len, md->js + value->start);
+		char *dest;
+		double vv = strtod(tmp, &dest);
+		if (dest == tmp) {
+			fprintf(stderr, "Expected a number: %s\n", tmp);
+			exit(EXIT_FAILURE);
+		}
 		if (vv == v) {
-			return 1;
+			return i+1;
 		}
 		j+= slurp_object(value);
 	}

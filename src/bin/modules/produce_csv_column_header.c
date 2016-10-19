@@ -75,11 +75,11 @@ char* produce_value_label(char* column, size_t len, struct csv_metadata *c, read
                 .v = { .double_value = v },
                 .type = READSTAT_TYPE_DOUBLE,
             };
-            if (is_missing_double(c->json_md, column, v)) {
+            int missing_idx = missing_double_idx(c->json_md, column, v);
+            if (missing_idx) {
                 value.is_tagged_missing = 1;
-                value.tag = 'a';
+                value.tag = 'a' + (missing_idx-1);
             }
-
             c->parser->value_label_handler(column, value, label, c->user_ctx);
         } else {
             fprintf(stderr, "unsupported column type for value label\n");
@@ -134,7 +134,7 @@ void produce_column_header(void *s, size_t len, void *data) {
     }
 
     if (c->parser->variable_handler) {
-        produce_missingness(column, len, c, coltype, var);
+        //produce_missingness(column, len, c, coltype, var);
         c->parser->variable_handler(c->columns, var, column, c->user_ctx);
     }
 }

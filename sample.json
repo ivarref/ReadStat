@@ -17,12 +17,16 @@
                 {
                     "code": 9,
                     "label": "No answer"
+                },
+                {
+                    "code": 99,
+                    "label": "Not obtainable"
                 }
             ],
             "missing": {
                 "type": "DISCRETE",
                 "values": [
-                    9
+                    9, 99
                 ]
             }
         },
