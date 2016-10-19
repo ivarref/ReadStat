@@ -32,16 +32,16 @@ readstat_value_t value_string(void *s, size_t len, struct csv_metadata *c) {
 }
 
 readstat_value_t value_double(void *s, size_t len, struct csv_metadata *c) {
+    char *dest;
     readstat_variable_t *var = &c->variables[c->columns];
-    double vv = strtod(s, NULL); // TODO handle malformatted data
+    double vv = strtod(s, &dest);
+    if (dest == s) {
+        fprintf(stderr, "not a number: %s\n", s);
+        exit(EXIT_FAILURE);
+    }
     if (is_missing_double(c->json_md, var->name, vv)) {
-        //fprintf(stderr, "missing value %g\n", vv);
-        readstat_value_t value = {
-            .is_system_missing = 0,
-            .is_tagged_missing = 1,
-            .v = { .double_value = vv },
-            .type = READSTAT_TYPE_DOUBLE
-        };
+        readstat_value_t value = { .type = READSTAT_TYPE_DOUBLE, .is_tagged_missing = 1, .tag = 'a', .v = { .double_value = 123 } };
+        fprintf(stderr, "it's a missing value >%g<\n", vv);
         return value;
     } else {
         readstat_value_t value = {

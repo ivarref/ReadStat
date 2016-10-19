@@ -19,5 +19,6 @@ jsmntok_t* find_variable_property(const char *js, jsmntok_t *t, const char* varn
 int slurp_object(jsmntok_t *t);
 jsmntok_t* find_object_property(const char *js, jsmntok_t *t, const char* propname);
 char* get_object_property(const char *js, jsmntok_t *t, const char* propname, char* dest, size_t size);
+
 #endif /* __JSON_METADATA_H_ */
 

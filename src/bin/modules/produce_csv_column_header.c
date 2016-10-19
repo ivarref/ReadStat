@@ -7,6 +7,47 @@
 #include "produce_csv_column_value.h"
 #include "produce_csv_column_header.h"
 
+int produce_missingness(char* column, size_t len, struct csv_metadata *c, readstat_type_t coltype, readstat_variable_t* var) {
+    jsmntok_t* missing = find_variable_property(c->json_md->js, c->json_md->tok, column, "missing");
+    if (missing==NULL) {
+        return 1;
+    }
+
+    char type_buf[1024];
+    char* type = get_object_property(c->json_md->js, missing, "type", type_buf, sizeof(type_buf));
+    if (!type) {
+        fprintf(stderr, "expected to find type property inside missing definition\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (0 == strcmp(type, "DISCRETE")) {
+        jsmntok_t* values = find_object_property(c->json_md->js, missing, "values");
+        if (!values) {
+            fprintf(stderr, "expected to find values property inside missing definition\n");
+            exit(EXIT_FAILURE);
+        }
+        int j = 1;
+        char double_buf[1024];
+        for (int i=0; i<values->size; i++) {
+            jsmntok_t* value = values+j;
+            snprintf(double_buf, sizeof(double_buf)-1, "%.*s", value->end - value->start, c->json_md->js+value->start);
+            char *dest;
+            double v = strtod(double_buf, &dest);
+            if (dest == double_buf) {
+                fprintf(stderr, "not a number: %s\n", double_buf);
+                exit(EXIT_FAILURE);
+            }
+            fprintf(stdout, "adding missing value metadata %g for column %s\n", v, column);
+            readstat_variable_add_missing_double_value(var, v);
+            j += slurp_object(value);
+        }
+    } else {
+        fprintf(stderr, "unsupported missing definition %s\n", type);
+        exit(EXIT_FAILURE);
+    }
+    return 0;
+}
+
 char* produce_value_label(char* column, size_t len, struct csv_metadata *c, readstat_type_t coltype) {
     jsmntok_t* categories = find_variable_property(c->json_md->js, c->json_md->tok, column, "categories");
     if (categories==NULL) {
@@ -20,7 +61,7 @@ char* produce_value_label(char* column, size_t len, struct csv_metadata *c, read
         char* code = get_object_property(c->json_md->js, tok, "code", code_buf, sizeof(code_buf));
         char* label = get_object_property(c->json_md->js, tok, "label", label_buf, sizeof(label_buf));
         if (!code || !label) {
-            fprintf(stderr, "bogus format\n");
+            fprintf(stderr, "bogus JSON metadata input\n");
             exit(EXIT_FAILURE);
         }
         if (coltype == READSTAT_TYPE_DOUBLE) {
@@ -32,8 +73,13 @@ char* produce_value_label(char* column, size_t len, struct csv_metadata *c, read
             }
             readstat_value_t value = {
                 .v = { .double_value = v },
-                .type = READSTAT_TYPE_DOUBLE
+                .type = READSTAT_TYPE_DOUBLE,
             };
+            if (is_missing_double(c->json_md, column, v)) {
+                value.is_tagged_missing = 1;
+                value.tag = 'a';
+            }
+
             c->parser->value_label_handler(column, value, label, c->user_ctx);
         } else {
             fprintf(stderr, "unsupported column type for value label\n");
@@ -65,7 +111,6 @@ void produce_column_header(void *s, size_t len, void *data) {
     snprintf(var->name, sizeof(var->name)-1, "%.*s", (int)len, column);
     copy_variable_property(c->json_md, column, "label", var->label, sizeof(var->label));
     // static int handle_value_label(const char *val_labels, readstat_value_t value, const char *label, void *ctx);
-    //fprintf(stdout, "size of var->label: %d\n", sizeof(var->label));
     // typedef struct readstat_variable_s {
     //     readstat_type_t         type;
     //     int                     index;
@@ -82,35 +127,14 @@ void produce_column_header(void *s, size_t len, void *data) {
     //     int                     display_width;
     // } readstat_variable_t;
 
-    // typedef struct readstat_label_set_s {
-    //     readstat_type_t            type;
-    //     char                        name[256];
+    //(char* column, size_t len, struct csv_metadata *c, readstat_type_t coltype, readstat_missingness_t* missingdest)
 
-    //     readstat_value_label_t     *value_labels;
-    //     long                        value_labels_count;
-    //     long                        value_labels_capacity;
-
-    //     void                       *variables;
-    //     long                        variables_count;
-    //     long                        variables_capacity;
-    // } readstat_label_set_t;
-
-    // typedef struct readstat_value_label_s {
-    //     double      double_key;
-    //     int32_t     int32_key;
-    //     char        tag;
-    //     char       *string_key;
-    //     size_t      string_key_len;
-    //     char       *label;
-    //     size_t      label_len;
-    // } readstat_value_label_t;
-
-    // (const char *val_labels, readstat_value_t value, const char *label, void *ctx)
     if (c->parser->value_label_handler) {
         produce_value_label(column, len, c, coltype);
     }
-    
+
     if (c->parser->variable_handler) {
+        produce_missingness(column, len, c, coltype, var);
         c->parser->variable_handler(c->columns, var, column, c->user_ctx);
     }
 }
