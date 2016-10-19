@@ -6,6 +6,7 @@ make $@
 echo "*************************************************"
 rm -f output.dta output.csv
 #valgrind --leak-check=full --error-exitcode=1 ./readstat ./sample.csv output.dta
+./test_json_input.py
 ./readstat ./sample.csv output.dta
 #./readstat output.dta output.csv
 #echo ">>> generated:::"

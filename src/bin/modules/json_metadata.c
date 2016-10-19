@@ -138,8 +138,10 @@ readstat_type_t column_type(struct json_metadata* md, char* varname) {
 		return READSTAT_TYPE_DOUBLE;
 	} else if (match_token(md->js, typ, "STRING")) {
 		return READSTAT_TYPE_STRING;
+	} else if (match_token(md->js, typ, "DATE")) {
+		return READSTAT_TYPE_INT32;
 	} else {
-		fprintf(stderr, "Unknown metadata type for variable %s\n", varname);
+		fprintf(stderr, "%s: %d: Unknown metadata type for variable %s\n", __FILE__, __LINE__, varname);
 		exit(EXIT_FAILURE);
 	}
 }
@@ -147,7 +149,7 @@ readstat_type_t column_type(struct json_metadata* md, char* varname) {
 struct json_metadata* get_json_metadata(char* filename) {
     struct json_metadata* result = malloc(sizeof(struct json_metadata));
     if (result == NULL) {
-        fprintf(stderr, "malloc failed\n");
+        fprintf(stderr, "%s: %d: malloc failed: %s\n", __FILE__, __LINE__, strerror(errno));
         return 0;
     }
     int r;

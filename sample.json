@@ -31,8 +31,13 @@
             }
         },
         {
-            "name": "age",
-            "type": "NUMERIC"
+            "name": "city",
+            "type": "STRING"
+        },
+        {
+            "name": "dato",
+            "type": "DATE",
+            "label": "some date"
         }
     ]
 }

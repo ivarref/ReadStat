@@ -52,6 +52,27 @@ readstat_value_t value_double(void *s, size_t len, struct csv_metadata *c) {
     return value;
 }
 
+readstat_value_t value_int32(void *s, size_t len, struct csv_metadata *c) {
+    char *dest;
+    readstat_variable_t *var = &c->variables[c->columns];
+    long int vv = strtol(s, &dest, 10);
+    if (dest == s) {
+        fprintf(stderr, "not a number: %s\n", (char*)s);
+        exit(EXIT_FAILURE);
+    }
+    //int missing_idx = missing_double_idx(c->json_md, var->name, vv);
+    readstat_value_t value = {
+        .type = READSTAT_TYPE_INT32,
+        .is_tagged_missing = 0,
+        .v = { .i32_value = vv }
+    };
+    // if (missing_idx) {
+    //     value.is_tagged_missing = 1;
+    //     value.tag = ('a' + missing_idx - 1);
+    // }
+    return value;
+}
+
 void produce_csv_column_value(void *s, size_t len, void *data) {
     struct csv_metadata *c = (struct csv_metadata *)data;
     readstat_variable_t *var = &c->variables[c->columns];
@@ -63,8 +84,10 @@ void produce_csv_column_value(void *s, size_t len, void *data) {
         value = value_string(s, len, c);
     } else if (var->type == READSTAT_TYPE_DOUBLE) {
         value = value_double(s, len, c);
+    } else if (var->type == READSTAT_TYPE_INT32) {
+        value = value_int32(s, len, c);
     } else {
-        fprintf(stderr, "unhandled column type: %x\n", var->type);
+        fprintf(stderr, "%s:%d unsupported column type: %x\n", __FILE__, __LINE__, var->type);
         exit(EXIT_FAILURE);
     }
     c->parser->value_handler(obs_index, var, value, c->user_ctx);

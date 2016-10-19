@@ -82,7 +82,7 @@ char* produce_value_label(char* column, size_t len, struct csv_metadata *c, read
             }
             c->parser->value_label_handler(column, value, label, c->user_ctx);
         } else {
-            fprintf(stderr, "unsupported column type for value label\n");
+            fprintf(stderr, "%s:%d unsupported column type for value label\n", __FILE__, __LINE__);
             exit(EXIT_FAILURE);
         }
         j += slurp_object(tok);
@@ -102,14 +102,18 @@ void produce_column_header(void *s, size_t len, void *data) {
         var->alignment = READSTAT_ALIGNMENT_LEFT;
     } else if (coltype == READSTAT_TYPE_DOUBLE) {
         var->alignment = READSTAT_ALIGNMENT_RIGHT;
+    } else if (coltype == READSTAT_TYPE_INT32) {
+        var->alignment = READSTAT_ALIGNMENT_RIGHT;
     } else {
-        fprintf(stderr, "unsupported column type: %x\n", coltype);
+        fprintf(stderr, "%s:%d unsupported column type: %x\n", __FILE__, __LINE__, coltype);
         exit(EXIT_FAILURE);
     }
     
     var->index = c->columns;
-    snprintf(var->name, sizeof(var->name)-1, "%.*s", (int)len, column);
     copy_variable_property(c->json_md, column, "label", var->label, sizeof(var->label));
+    snprintf(var->name, sizeof(var->name)-1, "%.*s", (int)len, column);
+    snprintf(var->format, sizeof(var->format)-1, "%s", "%td");
+
     // static int handle_value_label(const char *val_labels, readstat_value_t value, const char *label, void *ctx);
     // typedef struct readstat_variable_s {
     //     readstat_type_t         type;
@@ -127,10 +131,8 @@ void produce_column_header(void *s, size_t len, void *data) {
     //     int                     display_width;
     // } readstat_variable_t;
 
-    //(char* column, size_t len, struct csv_metadata *c, readstat_type_t coltype, readstat_missingness_t* missingdest)
-
     if (c->parser->value_label_handler) {
-        produce_value_label(column, len, c, coltype);
+        //produce_value_label(column, len, c, coltype);
     }
 
     if (c->parser->variable_handler) {
