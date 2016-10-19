@@ -7,6 +7,43 @@
 #include "produce_csv_column_value.h"
 #include "produce_csv_column_header.h"
 
+char* produce_value_label(char* column, size_t len, struct csv_metadata *c, readstat_type_t coltype) {
+    jsmntok_t* categories = find_variable_property(c->json_md->js, c->json_md->tok, column, "categories");
+    if (categories==NULL) {
+        return NULL;
+    }
+    int j = 1;
+    char code_buf[1024];
+    char label_buf[1024];
+    for (int i=0; i<categories->size; i++) {
+        jsmntok_t* tok = categories+j;
+        char* code = get_object_property(c->json_md->js, tok, "code", code_buf, sizeof(code_buf));
+        char* label = get_object_property(c->json_md->js, tok, "label", label_buf, sizeof(label_buf));
+        if (!code || !label) {
+            fprintf(stderr, "bogus format\n");
+            exit(EXIT_FAILURE);
+        }
+        if (coltype == READSTAT_TYPE_DOUBLE) {
+            char * endptr;
+            double v = strtod(code, &endptr);
+            if (endptr == code) {
+                fprintf(stderr, "not a number: %s\n", code);
+                exit(EXIT_FAILURE);
+            }
+            readstat_value_t value = {
+                .v = { .double_value = v },
+                .type = READSTAT_TYPE_DOUBLE
+            };
+            c->parser->value_label_handler(column, value, label, c->user_ctx);
+        } else {
+            fprintf(stderr, "unsupported column type for value label\n");
+            exit(EXIT_FAILURE);
+        }
+        j += slurp_object(tok);
+    }
+    return column;
+}
+
 void produce_column_header(void *s, size_t len, void *data) {
     struct csv_metadata *c = (struct csv_metadata *)data;
     char* column = (char*)s;
@@ -69,31 +106,11 @@ void produce_column_header(void *s, size_t len, void *data) {
     // } readstat_value_label_t;
 
     // (const char *val_labels, readstat_value_t value, const char *label, void *ctx)
-    /*
-    .label_sets = {
-            {
-                .name = "labels0",
-                .type = READSTAT_TYPE_DOUBLE,
-                .value_labels_count = 2,
-                .value_labels = {
-                    {
-                        .value = { .type = READSTAT_TYPE_DOUBLE, .v = { .double_value = 1 } },
-                        .label = "One"
-                    },
-                    {
-                        .value = { .type = READSTAT_TYPE_DOUBLE, .v = { .double_value = 2 } },
-                        .label = "Two"
-                    }
-                }
-            },
-    */
-
     if (c->parser->value_label_handler) {
-        fprintf(stdout, "woof\n");
+        produce_value_label(column, len, c, coltype);
     }
-
-    const char *val_labels = NULL;
+    
     if (c->parser->variable_handler) {
-        c->parser->variable_handler(c->columns, var, val_labels, c->user_ctx);
+        c->parser->variable_handler(c->columns, var, column, c->user_ctx);
     }
 }

@@ -47,6 +47,15 @@ jsmntok_t* find_object_property(const char *js, jsmntok_t *t, const char* propna
     return 0;
 }
 
+char* get_object_property(const char *js, jsmntok_t *t, const char* propname, char* dest, size_t size) {
+	jsmntok_t* tok = find_object_property(js, t, propname);
+	if (!tok) {
+		return NULL;
+	}
+	snprintf(dest, size-1, "%.*s", tok->end-tok->start, js+tok->start);
+	return dest;
+}
+
 jsmntok_t* find_variable_property(const char *js, jsmntok_t *t, const char* varname, const char* property) {
     if (t->type != JSMN_OBJECT) {
         fprintf(stderr, "expected root token to be OBJECT\n");

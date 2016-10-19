@@ -15,6 +15,9 @@ void free_json_metadata(struct json_metadata*);
 
 int is_missing_double(struct json_metadata* md, char* varname, double v);
 char* copy_variable_property(struct json_metadata* md, const char* varname, const char* property, char* dest, size_t maxsize);
-
+jsmntok_t* find_variable_property(const char *js, jsmntok_t *t, const char* varname, const char* property);
+int slurp_object(jsmntok_t *t);
+jsmntok_t* find_object_property(const char *js, jsmntok_t *t, const char* propname);
+char* get_object_property(const char *js, jsmntok_t *t, const char* propname, char* dest, size_t size);
 #endif /* __JSON_METADATA_H_ */
 

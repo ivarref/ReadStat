@@ -35,7 +35,7 @@ readstat_value_t value_double(void *s, size_t len, struct csv_metadata *c) {
     readstat_variable_t *var = &c->variables[c->columns];
     double vv = strtod(s, NULL); // TODO handle malformatted data
     if (is_missing_double(c->json_md, var->name, vv)) {
-        fprintf(stderr, "missing value %g\n", vv);
+        //fprintf(stderr, "missing value %g\n", vv);
         readstat_value_t value = {
             .is_system_missing = 0,
             .is_tagged_missing = 1,
