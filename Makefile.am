@@ -71,6 +71,7 @@ noinst_HEADERS = \
 	   src/bin/modules/jsmn.h \
 	   src/bin/modules/json_metadata.h \
 	   src/bin/modules/produce_csv_column_value.h \
+	   src/bin/modules/produce_csv_column_header.h \
        src/bin/modules/mod_readstat.h \
        src/bin/modules/mod_xlsx.h \
        src/test/test_buffer.h \
@@ -91,6 +92,7 @@ readstat_SOURCES = \
 	src/bin/modules/jsmn.c \
 	src/bin/modules/json_metadata.c \
 	src/bin/modules/produce_csv_column_value.c \
+	src/bin/modules/produce_csv_column_header.c \
 	src/bin/modules/mod_readstat.c
 
 readstat_LDADD = libreadstat.la
