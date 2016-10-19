@@ -161,6 +161,7 @@ static int handle_variable(int index, readstat_variable_t *variable,
     readstat_type_t type = readstat_variable_get_type(variable);
     const char *name = readstat_variable_get_name(variable);
     const char *label = readstat_variable_get_label(variable);
+    const char *format = readstat_variable_get_format(variable);
     size_t storage_width = readstat_variable_get_storage_width(variable);
     int display_width = readstat_variable_get_display_width(variable);
     int missing_ranges_count = readstat_variable_get_missing_ranges_count(variable);
@@ -193,6 +194,7 @@ static int handle_variable(int index, readstat_variable_t *variable,
     readstat_variable_set_measure(new_variable, measure);
     readstat_variable_set_display_width(new_variable, display_width);
     readstat_variable_set_label(new_variable, label);
+    readstat_variable_set_format(new_variable, format);
 
     return 0;
 }
