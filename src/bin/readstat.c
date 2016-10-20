@@ -24,7 +24,6 @@
 #define RS_FORMAT_SAS_DATA      0x08
 #define RS_FORMAT_SAS_CATALOG   0x10
 #define RS_FORMAT_CSV           0x20
-#define RS_FORMAT_JSON          0x40
 
 #define RS_FORMAT_CAN_WRITE     (RS_FORMAT_DTA | RS_FORMAT_SAV)
 
@@ -58,9 +57,6 @@ int format(const char *filename) {
     if (len < sizeof(".json")-1)
         return RS_FORMAT_UNKNOWN;
 
-    if (strncmp(filename + len - 5, ".json", 5) == 0)
-        return RS_FORMAT_JSON;
-
     if (strncmp(filename + len - 9, ".sas7bdat", 9) == 0)
         return RS_FORMAT_SAS_DATA;
 
@@ -93,7 +89,7 @@ const char *format_name(int format) {
 }
 
 int is_catalog(const char *filename) {
-    return (format(filename) == RS_FORMAT_SAS_CATALOG) || (format(filename) == RS_FORMAT_JSON);
+    return (format(filename) == RS_FORMAT_SAS_CATALOG);
 }
 
 int can_read(const char *filename) {
