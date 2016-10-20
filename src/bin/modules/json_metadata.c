@@ -96,6 +96,31 @@ char* copy_variable_property(struct json_metadata* md, const char* varname, cons
 	return dest;
 }
 
+int missing_string_idx(struct json_metadata* md, char* varname, char* v) {
+	jsmntok_t* missing = find_variable_property(md->js, md->tok, varname, "missing");
+	if (!missing) {
+		return 0;
+	}
+
+	jsmntok_t* values = find_object_property(md->js, missing, "values");
+	if (!values) {
+		return 0;
+	}
+
+	int j = 1;
+	for (int i=0; i<values->size; i++) {
+		jsmntok_t* value = values+j;
+		int len = value->end - value->start;
+		if (len == strlen(v)) {
+			if (0 == strncmp(v, md->js + value->start, len)) {
+				return i+1;
+			}
+		}
+		j+= slurp_object(value);
+	}
+	return 0;
+}
+
 int missing_double_idx(struct json_metadata* md, char* varname, double v) {
 	jsmntok_t* missing = find_variable_property(md->js, md->tok, varname, "missing");
 	if (!missing) {

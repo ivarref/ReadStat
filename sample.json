@@ -37,7 +37,23 @@
         {
             "name": "dato",
             "type": "DATE",
-            "label": "some date"
+            "label": "some date",
+            "categories": [
+                {
+                    "code": "9999-01-01",
+                    "label": "Missing date"
+                },
+                {
+                    "code": "6666-01-01",
+                    "label": "Missing-date-2"
+                }
+            ],
+            "missing": {
+                "type": "DISCRETE",
+                "values": [
+                    "9999-01-01", "6666-01-01"
+                ]
+            }
         }
     ]
 }

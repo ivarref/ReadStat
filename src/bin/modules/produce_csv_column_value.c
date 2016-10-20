@@ -95,6 +95,12 @@ readstat_value_t value_int32(void *s, size_t len, struct csv_metadata *c) {
         .is_tagged_missing = 0,
         .v = { .i32_value = dta_numdays(s) }
     };
+    readstat_variable_t *var = &c->variables[c->columns];
+    int missing_idx = missing_string_idx(c->json_md, var->name, s);
+    if (missing_idx) {
+        value.is_tagged_missing = 1;
+        value.tag = 'a' - 1 + missing_idx;
+    }
     return value;
 }
 

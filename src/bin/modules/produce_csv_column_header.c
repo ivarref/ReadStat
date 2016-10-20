@@ -81,6 +81,18 @@ char* produce_value_label(char* column, size_t len, struct csv_metadata *c, read
                 value.tag = 'a' + (missing_idx-1);
             }
             c->parser->value_label_handler(column, value, label, c->user_ctx);
+        } else if (coltype == READSTAT_TYPE_INT32) {
+            int days = dta_numdays(code);
+            readstat_value_t value = {
+                .v = { .i32_value = days },
+                .type = READSTAT_TYPE_INT32,
+            };
+            int missing_idx = missing_string_idx(c->json_md, column, code);
+            if (missing_idx) {
+                value.is_tagged_missing = 1;
+                value.tag = 'a' + (missing_idx-1);
+            }
+            c->parser->value_label_handler(column, value, label, c->user_ctx);
         } else {
             fprintf(stderr, "%s:%d unsupported column type for value label\n", __FILE__, __LINE__);
             exit(EXIT_FAILURE);
@@ -114,25 +126,8 @@ void produce_column_header(void *s, size_t len, void *data) {
     copy_variable_property(c->json_md, column, "label", var->label, sizeof(var->label));
     snprintf(var->name, sizeof(var->name)-1, "%.*s", (int)len, column);
 
-    // static int handle_value_label(const char *val_labels, readstat_value_t value, const char *label, void *ctx);
-    // typedef struct readstat_variable_s {
-    //     readstat_type_t         type;
-    //     int                     index;
-    //     char                    name[256];
-    //     char                    format[256];
-    //     char                    label[1024];
-    //     readstat_label_set_t   *label_set;
-    //     off_t                   offset;
-    //     size_t                  storage_width;
-    //     size_t                  user_width;
-    //     readstat_missingness_t  missingness;
-    //     readstat_measure_t      measure;
-    //     readstat_alignment_t    alignment;
-    //     int                     display_width;
-    // } readstat_variable_t;
-
     if (c->parser->value_label_handler) {
-        //produce_value_label(column, len, c, coltype);
+        produce_value_label(column, len, c, coltype);
     }
 
     if (c->parser->variable_handler) {
