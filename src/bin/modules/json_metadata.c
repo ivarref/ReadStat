@@ -139,6 +139,7 @@ readstat_type_t column_type(struct json_metadata* md, char* varname) {
 	} else if (match_token(md->js, typ, "STRING")) {
 		return READSTAT_TYPE_STRING;
 	} else if (match_token(md->js, typ, "DATE")) {
+		// TODO: Consider to add DATE type
 		return READSTAT_TYPE_INT32;
 	} else {
 		fprintf(stderr, "%s: %d: Unknown metadata type for variable %s\n", __FILE__, __LINE__, varname);

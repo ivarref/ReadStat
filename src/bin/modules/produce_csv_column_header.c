@@ -104,6 +104,7 @@ void produce_column_header(void *s, size_t len, void *data) {
         var->alignment = READSTAT_ALIGNMENT_RIGHT;
     } else if (coltype == READSTAT_TYPE_INT32) {
         var->alignment = READSTAT_ALIGNMENT_RIGHT;
+        snprintf(var->format, sizeof(var->format)-1, "%s", "%td");
     } else {
         fprintf(stderr, "%s:%d unsupported column type: %x\n", __FILE__, __LINE__, coltype);
         exit(EXIT_FAILURE);
@@ -112,7 +113,6 @@ void produce_column_header(void *s, size_t len, void *data) {
     var->index = c->columns;
     copy_variable_property(c->json_md, column, "label", var->label, sizeof(var->label));
     snprintf(var->name, sizeof(var->name)-1, "%.*s", (int)len, column);
-    snprintf(var->format, sizeof(var->format)-1, "%s", "%td");
 
     // static int handle_value_label(const char *val_labels, readstat_value_t value, const char *label, void *ctx);
     // typedef struct readstat_variable_s {
