@@ -68,10 +68,10 @@ noinst_HEADERS = \
        src/bin/module.h \
        src/bin/module_util.h \
        src/bin/modules/mod_csv.h \
-	   src/bin/modules/jsmn.h \
-	   src/bin/modules/json_metadata.h \
-	   src/bin/modules/produce_csv_column_value.h \
-	   src/bin/modules/produce_csv_column_header.h \
+       src/bin/modules/jsmn.h \
+       src/bin/modules/json_metadata.h \
+       src/bin/modules/produce_csv_column_value.h \
+       src/bin/modules/produce_csv_column_header.h \
        src/bin/modules/mod_readstat.h \
        src/bin/modules/mod_xlsx.h \
        src/test/test_buffer.h \
