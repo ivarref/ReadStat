@@ -28,6 +28,7 @@ libreadstat_la_SOURCES = \
 	src/spss/readstat_spss.c \
 	src/spss/readstat_spss_parse.c \
 	src/stata/readstat_dta.c \
+	src/stata/readstat_dta_days.c \
 	src/stata/readstat_dta_parse_timestamp.c \
 	src/stata/readstat_dta_read.c \
 	src/stata/readstat_dta_write.c
@@ -64,7 +65,8 @@ noinst_HEADERS = \
        src/spss/readstat_spss.h \
        src/spss/readstat_spss_parse.h \
        src/stata/readstat_dta.h \
-       src/stata/readstat_dta_parse_timestamp.h \
+       src/stata/readstat_dta_days.h \
+	   src/stata/readstat_dta_parse_timestamp.h \
        src/bin/module.h \
        src/bin/module_util.h \
        src/bin/modules/mod_csv.h \
@@ -107,7 +109,8 @@ endif
 readstat_LDADD += -lcsv
 
 check_PROGRAMS = \
-	test_readstat
+	test_readstat \
+	test_dta_dates
 
 test_readstat_SOURCES = \
 	src/test/test_buffer.c \
@@ -121,7 +124,13 @@ test_readstat_SOURCES = \
 test_readstat_LDADD = libreadstat.la
 test_readstat_CFLAGS = -g
 
-TESTS = test_readstat
+test_dta_dates_SOURCES = \
+	src/test/test_dta_dates.c
+
+test_dta_dates_LDADD = libreadstat.la
+test_dta_dates_CFLAGS = -g
+
+TESTS = test_readstat test_dta_dates
 
 install-exec-hook:
 	@(cd $(DESTDIR)$(libdir) && $(RM) $(lib_LTLIBRARIES))

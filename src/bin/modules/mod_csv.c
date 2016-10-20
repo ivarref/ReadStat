@@ -12,6 +12,7 @@
 #include "../module.h"
 #include "produce_csv_column_value.h"
 #include "produce_csv_column_header.h"
+#include "../../stata/readstat_dta_days.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -107,51 +108,9 @@ static int handle_value(int obs_index, readstat_variable_t *variable, readstat_v
         fprintf(mod_ctx->out_file, "%hd", readstat_int16_value(value));
     } else if (type == READSTAT_TYPE_INT32 && variable->format[0] && 0 == strncmp("%td", variable->format, strlen("%td"))) {
         int days = readstat_int32_value(value);
-        int yr = 1960;
-        int month = 0;
-        int day = 1;
-        int daysPerMonth[] =     {31,28,31,30,31,30,31,31,30,31,30,31};
-        int daysPerMonthLeap[] = {31,29,31,30,31,30,31,31,30,31,30,31};
-        if (days < 0) {
-            yr = 1959;
-            month = 11;
-            days = - days;
-            while (days > 0) {
-                int days_in_year = is_leap(yr) ? 366 : 365;
-                if (days >= days_in_year) {
-                    yr-=1;
-                    days-=days_in_year;
-                    continue;
-                }
-                int days_in_month = is_leap(yr) ? daysPerMonthLeap[month] : daysPerMonth[month];
-                if (days >= days_in_month) {
-                    month-=1;
-                    days-=days_in_month;
-                    continue;
-                }
-                day = days_in_month-days + 1;
-                fprintf(stdout, "days is %d\n", days);
-                days = 0;
-            }
-        } else {
-            while (days > 0) {
-                int days_in_year = is_leap(yr) ? 366 : 365;
-                if (days >= days_in_year) {
-                    yr+=1;
-                    days-=days_in_year;
-                    continue;
-                }
-                int days_in_month = is_leap(yr) ? daysPerMonthLeap[month] : daysPerMonth[month];
-                if (days >= days_in_month) {
-                    month+=1;
-                    days-=days_in_month;
-                    continue;
-                }
-                day+= days;
-                days = 0;
-            }
-        }
-        fprintf(mod_ctx->out_file, "%04d-%02d-%02d", yr, month+1, day);
+        char days_str[255];
+        readstat_dta_days_string(days, days_str, sizeof(days_str)-1);
+        fprintf(mod_ctx->out_file, "%s", days_str);
     } else if (type == READSTAT_TYPE_INT32) {
         fprintf(mod_ctx->out_file, "%d", readstat_int32_value(value));
     } else if (type == READSTAT_TYPE_FLOAT) {

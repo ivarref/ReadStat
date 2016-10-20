@@ -6,6 +6,7 @@
 
 #include "produce_csv_column_value.h"
 #include "produce_csv_column_header.h"
+#include "../../stata/readstat_dta_days.h"
 
 char* produce_value_label(char* column, size_t len, struct csv_metadata *c, readstat_type_t coltype) {
     jsmntok_t* categories = find_variable_property(c->json_md->js, c->json_md->tok, column, "categories");
@@ -41,7 +42,7 @@ char* produce_value_label(char* column, size_t len, struct csv_metadata *c, read
             }
             c->parser->value_label_handler(column, value, label, c->user_ctx);
         } else if (coltype == READSTAT_TYPE_INT32) {
-            int days = dta_numdays(code);
+            int days = readstat_dta_num_days(code);
             readstat_value_t value = {
                 .v = { .i32_value = days },
                 .type = READSTAT_TYPE_INT32,

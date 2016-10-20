@@ -30,4 +30,5 @@ test-suite.log
 test_readstat
 test_readstat.log
 test_readstat.trs
+test_dta_dates*
 .vscode/
