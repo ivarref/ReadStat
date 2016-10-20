@@ -53,7 +53,7 @@ int format(const char *filename) {
 
     if (len < sizeof(".sas7bdat")-1)
         return RS_FORMAT_UNKNOWN;
-    
+
     if (strncmp(filename + len - 9, ".sas7bdat", 9) == 0)
         return RS_FORMAT_SAS_DATA;
 
