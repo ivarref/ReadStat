@@ -7,47 +7,6 @@
 #include "produce_csv_column_value.h"
 #include "produce_csv_column_header.h"
 
-int produce_missingness(char* column, size_t len, struct csv_metadata *c, readstat_type_t coltype, readstat_variable_t* var) {
-    jsmntok_t* missing = find_variable_property(c->json_md->js, c->json_md->tok, column, "missing");
-    if (missing==NULL) {
-        return 1;
-    }
-
-    char type_buf[1024];
-    char* type = get_object_property(c->json_md->js, missing, "type", type_buf, sizeof(type_buf));
-    if (!type) {
-        fprintf(stderr, "expected to find type property inside missing definition\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if (0 == strcmp(type, "DISCRETE")) {
-        jsmntok_t* values = find_object_property(c->json_md->js, missing, "values");
-        if (!values) {
-            fprintf(stderr, "expected to find values property inside missing definition\n");
-            exit(EXIT_FAILURE);
-        }
-        int j = 1;
-        char double_buf[1024];
-        for (int i=0; i<values->size; i++) {
-            jsmntok_t* value = values+j;
-            snprintf(double_buf, sizeof(double_buf)-1, "%.*s", value->end - value->start, c->json_md->js+value->start);
-            char *dest;
-            double v = strtod(double_buf, &dest);
-            if (dest == double_buf) {
-                fprintf(stderr, "not a number: %s\n", double_buf);
-                exit(EXIT_FAILURE);
-            }
-            fprintf(stdout, "adding missing value metadata %g for column %s\n", v, column);
-            readstat_variable_add_missing_double_value(var, v);
-            j += slurp_object(value);
-        }
-    } else {
-        fprintf(stderr, "unsupported missing definition %s\n", type);
-        exit(EXIT_FAILURE);
-    }
-    return 0;
-}
-
 char* produce_value_label(char* column, size_t len, struct csv_metadata *c, readstat_type_t coltype) {
     jsmntok_t* categories = find_variable_property(c->json_md->js, c->json_md->tok, column, "categories");
     if (categories==NULL) {
@@ -61,14 +20,14 @@ char* produce_value_label(char* column, size_t len, struct csv_metadata *c, read
         char* code = get_object_property(c->json_md->js, tok, "code", code_buf, sizeof(code_buf));
         char* label = get_object_property(c->json_md->js, tok, "label", label_buf, sizeof(label_buf));
         if (!code || !label) {
-            fprintf(stderr, "bogus JSON metadata input\n");
+            fprintf(stderr, "%s:%d bogus JSON metadata input\n", __FILE__, __LINE__);
             exit(EXIT_FAILURE);
         }
         if (coltype == READSTAT_TYPE_DOUBLE) {
             char * endptr;
             double v = strtod(code, &endptr);
             if (endptr == code) {
-                fprintf(stderr, "not a number: %s\n", code);
+                fprintf(stderr, "%s:%d not a number: %s\n", __FILE__, __LINE__, code);
                 exit(EXIT_FAILURE);
             }
             readstat_value_t value = {
@@ -131,7 +90,6 @@ void produce_column_header(void *s, size_t len, void *data) {
     }
 
     if (c->parser->variable_handler) {
-        //produce_missingness(column, len, c, coltype, var);
         c->parser->variable_handler(c->columns, var, column, c->user_ctx);
     }
 }
