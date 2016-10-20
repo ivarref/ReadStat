@@ -402,7 +402,6 @@ int main(int argc, char** argv) {
 
     if (output_filename)
         return convert_file(input_filename, catalog_filename, output_filename, modules, modules_count);
-        
     return dump_file(input_filename);
 }
 
