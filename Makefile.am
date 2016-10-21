@@ -128,7 +128,7 @@ test_dta_dates_SOURCES = \
 	src/test/test_dta_dates.c
 
 test_dta_dates_LDADD = libreadstat.la
-test_dta_dates_CFLAGS = -g
+test_dta_dates_CFLAGS = -g -Wextra -Werror -pedantic-errors
 
 TESTS = test_readstat test_dta_dates
 

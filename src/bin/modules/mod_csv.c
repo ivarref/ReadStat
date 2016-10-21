@@ -99,6 +99,8 @@ static int handle_value(int obs_index, readstat_variable_t *variable, readstat_v
     }
     if (readstat_value_is_system_missing(value)) {
         /* void */
+    } else if (readstat_value_is_tagged_missing(value)) {
+        /* void */
     } else if (type == READSTAT_TYPE_STRING) {
         /* TODO escape */
         fprintf(mod_ctx->out_file, "\"%s\"", readstat_string_value(value));
@@ -173,6 +175,7 @@ readstat_error_t readstat_parse_csv(readstat_parser_t *parser, const char *path,
 
     if ((md->json_md = get_json_metadata(jsonpath)) == NULL) {
         fprintf(stderr, "Could not get JSON metadata\n");
+        goto cleanup;
     }
 
     if (io->open(path, io->io_ctx) == -1) {
@@ -196,7 +199,7 @@ readstat_error_t readstat_parse_csv(readstat_parser_t *parser, const char *path,
         retval = READSTAT_ERROR_OPEN;
         goto cleanup;
     }
-
+    
     while ((bytes_read = io->read(buf, sizeof(buf), io->io_ctx)) > 0)
     {
         if (csv_parse(p, buf, bytes_read, csv_metadata_cell, csv_metadata_row, md) != bytes_read)

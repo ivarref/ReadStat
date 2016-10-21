@@ -274,7 +274,6 @@ static int convert_file(const char *input_filename, const char *catalog_filename
     if (error != READSTAT_OK)
         goto cleanup;
     
-    fprintf(stdout, ">>> start pass two\n");
     // Pass 2 - Parse full file
     readstat_set_error_handler(pass2_parser, &handle_error);
     readstat_set_info_handler(pass2_parser, &handle_info);
@@ -419,9 +418,13 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    if (output_filename)
-        return convert_file(input_filename, catalog_filename, output_filename, modules, modules_count);
-
-    return dump_file(input_filename);
+    int ret;
+    if (output_filename) {
+        ret = convert_file(input_filename, catalog_filename, output_filename, modules, modules_count);
+    } else {
+        ret = dump_file(input_filename); 
+    }
+    free(modules);
+    return ret;
 }
 

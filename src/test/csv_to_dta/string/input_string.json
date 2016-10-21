@@ -1,0 +1,10 @@
+{
+    "type": "STATA",
+    "variables": [
+        {
+            "name": "message",
+            "type": "STRING",
+            "label": "A message"
+        }
+    ]
+}

@@ -17,6 +17,7 @@ class VariableMetadataValidation(unittest.TestCase):
                 payload = json.load(fd)
                 validate(payload, self.schema)
         check_valid_file('./sample.json')
+        # check_valid_file('./src/test/csv_to_dta/input.json')
 
 if __name__=="__main__":
     unittest.main()

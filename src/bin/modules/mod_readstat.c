@@ -194,7 +194,7 @@ static int handle_variable(int index, readstat_variable_t *variable,
     readstat_variable_set_measure(new_variable, measure);
     readstat_variable_set_display_width(new_variable, display_width);
     readstat_variable_set_label(new_variable, label);
-    if (format[0] && mod_ctx->is_dta && format[0]!='%') {
+    if (format && format[0] && mod_ctx->is_dta && format[0]!='%') {
         // TODO I suppose you would need some translation from SPSS to DTA
         fprintf(stderr, "%s:%d Unsupported format '%s' given for DTA, aborting...\n", __FILE__, __LINE__, format);
         exit(EXIT_FAILURE);
