@@ -24,6 +24,7 @@
 #define RS_FORMAT_SAS_DATA      0x08
 #define RS_FORMAT_SAS_CATALOG   0x10
 #define RS_FORMAT_CSV           0x20
+#define RS_FORMAT_JSON          0x40
 
 #define RS_FORMAT_CAN_WRITE     (RS_FORMAT_DTA | RS_FORMAT_SAV)
 
@@ -50,6 +51,12 @@ int format(const char *filename) {
 
     if (strncmp(filename + len - 4, ".csv", 4) == 0)
         return RS_FORMAT_CSV;
+
+    if (len < sizeof(".json")-1)
+        return RS_FORMAT_UNKNOWN;
+    
+    if (strncmp(filename + len - 5, ".json", 5) == 0)
+        return RS_FORMAT_JSON;
 
     if (len < sizeof(".sas7bdat")-1)
         return RS_FORMAT_UNKNOWN;
@@ -87,6 +94,10 @@ const char *format_name(int format) {
 
 int is_catalog(const char *filename) {
     return (format(filename) == RS_FORMAT_SAS_CATALOG);
+}
+
+int is_json(const char *filename) {
+    return (format(filename) == RS_FORMAT_JSON);
 }
 
 int can_read(const char *filename) {
@@ -189,8 +200,6 @@ readstat_error_t parse_file(readstat_parser_t *parser, const char *input_filenam
         error = readstat_parse_sas7bdat(parser, input_filename, ctx);
     } else if (input_format == RS_FORMAT_SAS_CATALOG) {
         error = readstat_parse_sas7bcat(parser, input_filename, ctx);
-    } else if (input_format == RS_FORMAT_CSV) {
-        error = readstat_parse_csv(parser, input_filename, ctx);
     } else {
         error = READSTAT_ERROR_UNSUPPORTED_CHARSET;
     }
@@ -251,11 +260,14 @@ static int convert_file(const char *input_filename, const char *catalog_filename
     readstat_set_value_label_handler(pass1_parser, &handle_value_label);
     readstat_set_fweight_handler(pass1_parser, &handle_fweight);
 
-    if (catalog_filename) {
+    fprintf(stdout, ">>> start pass one\n");
+    if (catalog_filename && input_format == RS_FORMAT_CSV) {
+        error = readstat_parse_csv(pass1_parser, input_filename, catalog_filename, rs_ctx);
+        error_filename = input_filename;
+    } else if (catalog_filename) {
         error = parse_file(pass1_parser, catalog_filename, RS_FORMAT_SAS_CATALOG, rs_ctx);
         error_filename = catalog_filename;
     } else {
-        fprintf(stdout, ">>> start pass one\n");
         error = parse_file(pass1_parser, input_filename, input_format, rs_ctx);
         error_filename = input_filename;
     }
@@ -271,7 +283,11 @@ static int convert_file(const char *input_filename, const char *catalog_filename
     readstat_set_variable_handler(pass2_parser, &handle_variable);
     readstat_set_value_handler(pass2_parser, &handle_value);
 
-    error = parse_file(pass2_parser, input_filename, input_format, rs_ctx);
+    if (catalog_filename && input_format == RS_FORMAT_CSV) {
+        error = readstat_parse_csv(pass2_parser, input_filename, catalog_filename, rs_ctx);
+    } else {
+        error = parse_file(pass2_parser, input_filename, input_format, rs_ctx);
+    }
     error_filename = input_filename;
     if (error != READSTAT_OK)
         goto cleanup;
@@ -367,7 +383,6 @@ int main(int argc, char** argv) {
 #if HAVE_XLSXWRITER
     modules[module_index++] = rs_mod_xlsx;
 #endif
-
     if (argc == 2 && (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0)) {
         print_version();
         return 0;
@@ -387,6 +402,10 @@ int main(int argc, char** argv) {
         }
         input_filename = argv[1];
         output_filename = argv[2];
+    } else if (argc == 4 && can_read(argv[1]) && is_json(argv[2]) && can_read(argv[2]) && can_write(modules, modules_count, argv[3])) {
+        input_filename = argv[1];
+        catalog_filename = argv[2];
+        output_filename = argv[3];
     } else if (argc == 4) {
         if (!can_read(argv[1]) || !is_catalog(argv[2]) || !can_write(modules, modules_count, argv[3])) {
             print_usage(argv[0]);

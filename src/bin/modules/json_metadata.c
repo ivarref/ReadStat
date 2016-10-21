@@ -172,7 +172,7 @@ readstat_type_t column_type(struct json_metadata* md, char* varname) {
 	}
 }
 
-struct json_metadata* get_json_metadata(char* filename) {
+struct json_metadata* get_json_metadata(const char* filename) {
     struct json_metadata* result = malloc(sizeof(struct json_metadata));
     if (result == NULL) {
         fprintf(stderr, "%s: %d: malloc failed: %s\n", __FILE__, __LINE__, strerror(errno));

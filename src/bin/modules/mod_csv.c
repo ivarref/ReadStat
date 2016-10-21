@@ -156,7 +156,7 @@ void csv_metadata_row(int cc, void *data)
     c->open_row = 0;
 }
 
-readstat_error_t readstat_parse_csv(readstat_parser_t *parser, const char *path, void *user_ctx) {
+readstat_error_t readstat_parse_csv(readstat_parser_t *parser, const char *path, const char *jsonpath, void *user_ctx) {
     readstat_error_t retval = READSTAT_OK;
     readstat_io_t *io = parser->io;
     size_t file_size = 0;
@@ -171,10 +171,6 @@ readstat_error_t readstat_parse_csv(readstat_parser_t *parser, const char *path,
     md->user_ctx = user_ctx;
     md->json_md = NULL;
 
-    char* jsonpath = calloc(strlen(path)+2, sizeof(char));
-    int len = strlen(path) - strlen(".csv");
-    sprintf(jsonpath, "%.*s.json", len, path);
-    //fprintf(stdout, "json file is >%s<\n", jsonpath);
     if ((md->json_md = get_json_metadata(jsonpath)) == NULL) {
         fprintf(stderr, "Could not get JSON metadata\n");
     }
@@ -226,10 +222,6 @@ cleanup:
     if (md->variables) {
         free(md->variables);
         md->variables = NULL;
-    }
-    if (jsonpath) {
-        free(jsonpath);
-        jsonpath = NULL;
     }
     if (md->json_md) {
         free_json_metadata(md->json_md);

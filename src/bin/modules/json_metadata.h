@@ -9,7 +9,7 @@ typedef struct json_metadata {
     jsmntok_t* tok;
 } json_metadata;
 
-struct json_metadata* get_json_metadata(char* filename);
+struct json_metadata* get_json_metadata(const char* filename);
 readstat_type_t column_type(struct json_metadata* md, char* varname);
 void free_json_metadata(struct json_metadata*);
 
