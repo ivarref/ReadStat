@@ -260,7 +260,7 @@ static int convert_file(const char *input_filename, const char *catalog_filename
     readstat_set_value_label_handler(pass1_parser, &handle_value_label);
     readstat_set_fweight_handler(pass1_parser, &handle_fweight);
 
-    fprintf(stdout, ">>> start pass one\n");
+    fprintf(stdout, ">>> start pass\n");
     if (catalog_filename && input_format == RS_FORMAT_CSV) {
         error = readstat_parse_csv(pass1_parser, input_filename, catalog_filename, rs_ctx);
         error_filename = input_filename;

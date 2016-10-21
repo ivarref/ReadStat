@@ -66,7 +66,7 @@ noinst_HEADERS = \
        src/spss/readstat_spss_parse.h \
        src/stata/readstat_dta.h \
        src/stata/readstat_dta_days.h \
-	   src/stata/readstat_dta_parse_timestamp.h \
+       src/stata/readstat_dta_parse_timestamp.h \
        src/bin/module.h \
        src/bin/module_util.h \
        src/bin/modules/mod_csv.h \
@@ -131,6 +131,14 @@ test_dta_dates_LDADD = libreadstat.la
 test_dta_dates_CFLAGS = -g -Wextra -Werror -pedantic-errors
 
 TESTS = test_readstat test_dta_dates
+
+.PHONY: check-valgrind ;
+
+check-valgrind: $(TESTS)
+	@for test in $$(echo $(TESTS) | sed 's/tests\//tests\/.libs\//g') ; do \
+		CK_FORK=no libtool --mode=execute valgrind --error-exitcode=1 --quiet \
+		--leak-check=full $${test} ; \
+		done
 
 install-exec-hook:
 	@(cd $(DESTDIR)$(libdir) && $(RM) $(lib_LTLIBRARIES))
