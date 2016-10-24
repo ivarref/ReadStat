@@ -7,19 +7,19 @@
             "label": "gender of respondent",
             "categories": [
                 {
-                    "code": "1",
+                    "code": 1,
                     "label": "Male"
                 },
                 {
-                    "code": "2",
+                    "code": 2,
                     "label": "Female"
                 },
                 {
-                    "code": "9",
+                    "code": 9,
                     "label": "Missing1"
                 },
                 {
-                    "code": "99",
+                    "code": 99,
                     "label": "Missing2"
                 }
             ],

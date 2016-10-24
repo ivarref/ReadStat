@@ -1,10 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import unittest
-from jsonschema import validate
-import json
+from __future__ import print_function
+
 import codecs
+import json
+import unittest
+from glob import glob
+
+from jsonschema import validate
+
 
 class VariableMetadataValidation(unittest.TestCase):
     def setUp(self):
@@ -16,9 +21,12 @@ class VariableMetadataValidation(unittest.TestCase):
             with codecs.open(fil, encoding='utf8') as fd:
                 payload = json.load(fd)
                 validate(payload, self.schema)
-        check_valid_file('./sample.json')
-        # check_valid_file('./src/test/csv_to_dta/input.json')
+        for fil in glob("./src/test/csv_to_dta/**/*.json"):
+            try:
+                check_valid_file(fil)
+            except:
+                print("failed for file %s" % (fil))
+                raise
 
 if __name__=="__main__":
     unittest.main()
-    
