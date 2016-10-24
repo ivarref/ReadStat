@@ -128,7 +128,7 @@ test_csv_to_dta_SOURCES = \
 	src/test/test_csv_to_dta.c
 
 test_csv_to_dta_LDADD = libreadstat.la
-test_csv_to_dta_CFLAGS = -g -Wextra -Werror -pedantic-errors
+test_csv_to_dta_CFLAGS = -g -Wextra -Werror -pedantic-errors -std=c99
 
 TESTS = test_readstat test_csv_to_dta
 
@@ -136,7 +136,7 @@ TESTS = test_readstat test_csv_to_dta
 
 check-valgrind: $(TESTS)
 	@for test in $$(echo $(TESTS) | sed 's/tests\//tests\/.libs\//g') ; do \
-		CK_FORK=no libtool --mode=execute valgrind --error-exitcode=1 --quiet \
+		CK_FORK=no libtool --mode=execute valgrind --error-exitcode=1 \
 		--leak-check=full $${test} ; \
 		done
 
