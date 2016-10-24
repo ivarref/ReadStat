@@ -86,10 +86,6 @@ static int handle_variable(int index, readstat_variable_t *variable,
     return 0;
 }
 
-static inline int is_leap(int year) {
-    return ((year % 4 == 0 && year % 100 != 0) || year % 400 ==0);
-}
-
 static int handle_value(int obs_index, readstat_variable_t *variable, readstat_value_t value, void *ctx) {
     mod_csv_ctx_t *mod_ctx = (mod_csv_ctx_t *)ctx;
     readstat_type_t type = readstat_value_type(value);
@@ -108,7 +104,7 @@ static int handle_value(int obs_index, readstat_variable_t *variable, readstat_v
         fprintf(mod_ctx->out_file, "%hhd", readstat_int8_value(value));
     } else if (type == READSTAT_TYPE_INT16) {
         fprintf(mod_ctx->out_file, "%hd", readstat_int16_value(value));
-    } else if (type == READSTAT_TYPE_INT32 && variable->format[0] && 0 == strncmp("%td", variable->format, strlen("%td"))) {
+    } else if (type == READSTAT_TYPE_INT32 && variable->format && variable->format[0] && 0 == strncmp("%td", variable->format, strlen("%td"))) {
         int days = readstat_int32_value(value);
         char days_str[255];
         readstat_dta_days_string(days, days_str, sizeof(days_str)-1);
