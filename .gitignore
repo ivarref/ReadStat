@@ -28,8 +28,8 @@ autom4te.cache/*
 output.*
 test-suite.log
 test_readstat
-test_readstat.log
-test_readstat.trs
-test_dta_dates*
+*.log
+*.trs
+test_csv_to_dta*
 .vscode/
 *.swp

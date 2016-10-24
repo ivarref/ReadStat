@@ -110,7 +110,7 @@ readstat_LDADD += -lcsv
 
 check_PROGRAMS = \
 	test_readstat \
-	test_dta_dates
+	test_csv_to_dta
 
 test_readstat_SOURCES = \
 	src/test/test_buffer.c \
@@ -124,13 +124,13 @@ test_readstat_SOURCES = \
 test_readstat_LDADD = libreadstat.la
 test_readstat_CFLAGS = -g
 
-test_dta_dates_SOURCES = \
-	src/test/test_dta_dates.c
+test_csv_to_dta_SOURCES = \
+	src/test/test_csv_to_dta.c
 
-test_dta_dates_LDADD = libreadstat.la
-test_dta_dates_CFLAGS = -g -Wextra -Werror -pedantic-errors
+test_csv_to_dta_LDADD = libreadstat.la
+test_csv_to_dta_CFLAGS = -g -Wextra -Werror -pedantic-errors
 
-TESTS = test_readstat test_dta_dates
+TESTS = test_readstat test_csv_to_dta
 
 .PHONY: check-valgrind ;
 
