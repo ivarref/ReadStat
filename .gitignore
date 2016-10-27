@@ -34,3 +34,7 @@ test_csv_to_dta*
 .vscode/
 *.swp
 dev/
+tmp.*
+test_performance
+prof_output
+gmon.out

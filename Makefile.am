@@ -38,7 +38,7 @@ if HAVE_RAGEL
 	$(AM_V_GEN)$(RAGEL) $(RAGELFLAGS) -C $< -o $@
 endif
 
-libreadstat_la_CFLAGS = -Wall -pedantic-errors -std=c99
+libreadstat_la_CFLAGS = -pg -Wall -pedantic-errors -std=c99
 libreadstat_la_LIBADD = @EXTRA_LIBS@
 libreadstat_la_LDFLAGS = @EXTRA_LDFLAGS@
 
@@ -98,7 +98,7 @@ readstat_SOURCES = \
 	src/bin/modules/mod_readstat.c
 
 readstat_LDADD = libreadstat.la
-readstat_CFLAGS = -Wall -pedantic-errors -std=c99
+readstat_CFLAGS = -pg -Wall -pedantic-errors -std=c99
 
 if HAVE_XLSXWRITER
 readstat_SOURCES += src/bin/modules/mod_xlsx.c
@@ -110,7 +110,8 @@ readstat_LDADD += -lcsv
 
 check_PROGRAMS = \
 	test_readstat \
-	test_csv_to_dta
+	test_csv_to_dta \
+	test_performance
 
 test_readstat_SOURCES = \
 	src/test/test_buffer.c \
@@ -122,15 +123,21 @@ test_readstat_SOURCES = \
 	src/test/test_write.c
 
 test_readstat_LDADD = libreadstat.la
-test_readstat_CFLAGS = -g
+test_readstat_CFLAGS = -pg -g
 
 test_csv_to_dta_SOURCES = \
 	src/test/test_csv_to_dta.c
 
+test_performance_SOURCES = \
+	src/test/test_performance.c
+
 test_csv_to_dta_LDADD = libreadstat.la
 test_csv_to_dta_CFLAGS = -g -Wextra -Werror -pedantic-errors -std=c99
 
-TESTS = test_readstat test_csv_to_dta
+test_performance_LDADD = libreadstat.la
+test_performance_CFLAGS = -g -Wextra -Werror -pedantic-errors -std=c99
+
+TESTS = test_readstat test_csv_to_dta test_performance
 
 .PHONY: check-valgrind ;
 
