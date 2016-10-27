@@ -38,3 +38,5 @@ tmp.*
 test_performance
 prof_output
 gmon.out
+gen.json
+extract_metadata

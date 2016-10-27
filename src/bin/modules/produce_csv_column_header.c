@@ -117,11 +117,9 @@ void produce_missingness(struct csv_metadata *c, const char* column) {
         return;
     }
 
-    printf("found missing for >%s< :-)\n", column);
     int j = 1;
     for (int i=0; i<values->size; i++) {
         jsmntok_t* missing_value_token = values + j;
-        fprintf(stdout, "%d :: missing value >%.*s<\n", i, missing_value_token->end - missing_value_token->start, js + missing_value_token->start);
         if (var->type == READSTAT_TYPE_DOUBLE) {
             var->missingness.missing_ranges[var->missingness.missing_ranges_count++] = get_double_missing(js, missing_value_token, i);
         } else if (var->type == READSTAT_TYPE_INT32) {

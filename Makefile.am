@@ -42,7 +42,7 @@ if HAVE_RAGEL
 	$(AM_V_GEN)$(RAGEL) $(RAGELFLAGS) -C $< -o $@
 endif
 
-libreadstat_la_CFLAGS = -pg -Wall -pedantic-errors -std=c99
+libreadstat_la_CFLAGS = -Wall -pedantic-errors -std=c99
 libreadstat_la_LIBADD = @EXTRA_LIBS@
 libreadstat_la_LDFLAGS = @EXTRA_LDFLAGS@
 
@@ -91,7 +91,8 @@ noinst_HEADERS = \
        src/test/test_write.h
 
 bin_PROGRAMS = \
-   readstat
+   readstat \
+   extract_metadata
 
 readstat_SOURCES = \
 	src/bin/readstat.c \
@@ -103,8 +104,14 @@ readstat_SOURCES = \
 	src/bin/modules/produce_csv_column_header.c \
 	src/bin/modules/mod_readstat.c
 
+extract_metadata_SOURCES = \
+	src/bin/extract_metadata.c
+
 readstat_LDADD = libreadstat.la
-readstat_CFLAGS = -pg -Wall -pedantic-errors -std=c99
+readstat_CFLAGS = -Wall -pedantic-errors -std=c99
+
+extract_metadata_LDADD = libreadstat.la
+extract_metadata_CFLAGS = -Wall -pedantic-errors -std=c99
 
 if HAVE_XLSXWRITER
 readstat_SOURCES += src/bin/modules/mod_xlsx.c
