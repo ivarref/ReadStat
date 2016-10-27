@@ -127,8 +127,6 @@ void csv_metadata_cell(void *s, size_t len, void *data)
     struct csv_metadata *c = (struct csv_metadata *)data;
     if (c->rows == 0) {
         c->variables = realloc(c->variables, (c->columns+1) * sizeof(readstat_variable_t));
-    }
-    if (c->rows == 0) {
         produce_column_header(s, len, data);
     } else if (c->rows >= 1 && c->parser->value_handler) {
         produce_csv_column_value(s, len, data);

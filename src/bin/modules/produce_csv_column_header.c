@@ -62,6 +62,78 @@ char* produce_value_label(char* column, size_t len, struct csv_metadata *c, read
     return column;
 }
 
+readstat_value_t get_double_missing(const char *js, jsmntok_t* missing_value_token, int idx) {
+    char buf[255];
+    char *dest;
+    int len = missing_value_token->end - missing_value_token->start;
+    snprintf(buf, sizeof(buf)-1, "%.*s", len, js + missing_value_token->start);
+    double val = strtod(buf, &dest);
+    if (buf == dest) {
+        fprintf(stderr, "%s:%d failed to parse double: %s\n", __FILE__, __LINE__, buf);
+        exit(EXIT_FAILURE);
+    }
+    readstat_value_t value = {
+        .type = READSTAT_TYPE_DOUBLE,
+        .is_system_missing = 0,
+        .is_tagged_missing = 1,
+        .tag = 'a' + idx,
+        .v = {
+            .double_value = val
+        }
+    };
+    return value;
+}
+
+readstat_value_t get_int32_missing(const char *js, jsmntok_t* missing_value_token, int idx) {
+    char buf[255];
+    int len = missing_value_token->end - missing_value_token->start;
+    snprintf(buf, sizeof(buf)-1, "%.*s", len, js + missing_value_token->start);
+    int days = readstat_dta_num_days(buf);
+    readstat_value_t value = {
+        .type = READSTAT_TYPE_INT32,
+        .is_system_missing = 0,
+        .is_tagged_missing = 1,
+        .tag = 'a' + idx,
+        .v = {
+            .i32_value = days
+        }
+    };
+    return value;
+}
+
+void produce_missingness(struct csv_metadata *c, const char* column) {
+    readstat_variable_t* var = &c->variables[c->columns];
+    const char *js = c->json_md->js;
+    var->missingness.missing_ranges_count = 0;
+    
+    jsmntok_t* missing = find_variable_property(js, c->json_md->tok, column, "missing");
+    if (!missing) {
+        return;
+    }
+
+    jsmntok_t* values = find_object_property(js, missing, "values");
+    if (!values) {
+        fprintf(stderr, "%s:%d Expected to find missing 'values' property\n", __FILE__, __LINE__);
+        return;
+    }
+
+    printf("found missing for >%s< :-)\n", column);
+    int j = 1;
+    for (int i=0; i<values->size; i++) {
+        jsmntok_t* missing_value_token = values + j;
+        fprintf(stdout, "%d :: missing value >%.*s<\n", i, missing_value_token->end - missing_value_token->start, js + missing_value_token->start);
+        if (var->type == READSTAT_TYPE_DOUBLE) {
+            var->missingness.missing_ranges[var->missingness.missing_ranges_count++] = get_double_missing(js, missing_value_token, i);
+        } else if (var->type == READSTAT_TYPE_INT32) {
+            var->missingness.missing_ranges[var->missingness.missing_ranges_count++] = get_int32_missing(js, missing_value_token, i);
+        } else {
+            fprintf(stderr, "%s:%d Unsupported column type %d\n", __FILE__, __LINE__, var->type);
+            exit(EXIT_FAILURE);
+        }
+        j += slurp_object(missing_value_token);
+    }
+}
+
 void produce_column_header(void *s, size_t len, void *data) {
     struct csv_metadata *c = (struct csv_metadata *)data;
     char* column = (char*)s;
@@ -86,6 +158,7 @@ void produce_column_header(void *s, size_t len, void *data) {
     copy_variable_property(c->json_md, column, "label", var->label, sizeof(var->label));
     snprintf(var->name, sizeof(var->name)-1, "%.*s", (int)len, column);
 
+    produce_missingness(c, column);
     if (c->parser->value_label_handler) {
         produce_value_label(column, len, c, coltype);
     }

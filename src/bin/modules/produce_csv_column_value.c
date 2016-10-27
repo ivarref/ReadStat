@@ -9,6 +9,7 @@
 #include "../../readstat.h"
 #include "../module_util.h"
 #include "../module.h"
+#include "produce_csv_column_header.h"
 #include "produce_csv_column_value.h"
 #include "json_metadata.h"
 #include "../../stata/readstat_dta_days.h"
@@ -36,36 +37,38 @@ readstat_value_t value_string(void *s, size_t len, struct csv_metadata *c) {
 readstat_value_t value_double(void *s, size_t len, struct csv_metadata *c) {
     char *dest;
     readstat_variable_t *var = &c->variables[c->columns];
-    double vv = strtod(s, &dest);
+    double val = strtod(s, &dest);
     if (dest == s) {
         fprintf(stderr, "not a number: %s\n", (char*)s);
         exit(EXIT_FAILURE);
     }
-    int missing_idx = missing_double_idx(c->json_md, var->name, vv);
+    for (int i=0; i<var->missingness.missing_ranges_count; i++) {
+        if (val == var->missingness.missing_ranges[i].v.double_value) {
+            return var->missingness.missing_ranges[i];
+        }
+    }
     readstat_value_t value = {
         .type = READSTAT_TYPE_DOUBLE,
         .is_tagged_missing = 0,
-        .v = { .double_value = vv }
+        .v = { .double_value = val }
     };
-    if (missing_idx) {
-        value.is_tagged_missing = 1;
-        value.tag = ('a' + missing_idx - 1);
-    }
     return value;
 }
 
 readstat_value_t value_int32(void *s, size_t len, struct csv_metadata *c) {
+    readstat_variable_t *var = &c->variables[c->columns];
+    int val = readstat_dta_num_days(s);
+
+    for (int i=0; i<var->missingness.missing_ranges_count; i++) {
+        if (val == var->missingness.missing_ranges[i].v.i32_value) {
+            return var->missingness.missing_ranges[i];
+        }
+    }
     readstat_value_t value = {
         .type = READSTAT_TYPE_INT32,
         .is_tagged_missing = 0,
-        .v = { .i32_value = readstat_dta_num_days(s) }
+        .v = { .i32_value = val }
     };
-    readstat_variable_t *var = &c->variables[c->columns];
-    int missing_idx = missing_string_idx(c->json_md, var->name, s);
-    if (missing_idx) {
-        value.is_tagged_missing = 1;
-        value.tag = 'a' - 1 + missing_idx;
-    }
     return value;
 }
 
