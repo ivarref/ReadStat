@@ -1,3 +1,4 @@
+#define _BSD_SOURCE
 #include "../readstat.h"
 #include <stdio.h>
 #include <sys/stat.h>
@@ -5,14 +6,56 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <string.h>
 
 typedef struct context {
     int count;
     FILE* fp;
+    long variable_count;
+    readstat_label_set_t *label_set;
 } context;
+
+static int handle_value_label(const char *val_labels, readstat_value_t value, const char *label, void *c) {
+    struct context *ctx = (struct context*)c;
+    // TODO: Will this work with anything other than SAV?
+    if (value.type == READSTAT_TYPE_DOUBLE && strncmp(val_labels, "labels", strlen("labels")) == 0) {
+        char* dest;
+        const char *src = val_labels+strlen("labels");
+        long idx = strtol(src, &dest, 10);
+        if (dest == src) {
+            fprintf(stderr, "%s:%d expected a number, got %s\n", __FILE__, __LINE__, src);
+            exit(EXIT_FAILURE);
+        }
+        if (ctx->variable_count == idx) {
+            long size = idx+1;
+            ctx->label_set = realloc(ctx->label_set, size*sizeof(readstat_label_set_t));
+            if (!ctx->label_set) {
+                fprintf(stderr, "%s:%d realloc error: %s\n", __FILE__, __LINE__, strerror(errno));
+                return READSTAT_ERROR_MALLOC;
+            }
+
+            memset(&ctx->label_set[idx], 0, sizeof(readstat_label_set_t));
+            fprintf(stdout, "alloc for index %ld\n", idx);
+            ctx->variable_count++;
+        }
+        readstat_label_set_t* label_set = &ctx->label_set[idx];
+        snprintf(label_set->name, sizeof(label_set->name)-1, "%s", val_labels);
+        long label_idx = label_set->value_labels_count;
+        label_set->value_labels = realloc(label_set->value_labels, (1 + label_idx) * sizeof(readstat_value_label_t));
+        readstat_value_label_t* value_label = &label_set->value_labels[label_idx];
+        memset(value_label, 0, sizeof(readstat_value_label_t));
+        value_label->double_key = value.v.double_value;
+        value_label->label = strdup(label);
+        value_label->label_len = strlen(label);
+
+        label_set->value_labels_count++;
+    }
+    return 0;
+}
 
 int handle_variable (int index, readstat_variable_t *variable, const char *val_labels, void *my_ctx) {
     struct context *ctx = (struct context *)my_ctx;
+    
     char* type = "";
     if (variable->type == READSTAT_TYPE_STRING) {
         type = "STRING";
@@ -45,7 +88,23 @@ int handle_variable (int index, readstat_variable_t *variable, const char *val_l
         fprintf(ctx->fp, ",\n");
     }
     
+    //fprintf(stdout, "enter column %s\n", variable->name);
     fprintf(ctx->fp, "{\"type\": \"%s\", \"name\": \"%s\"", type, variable->name);
+    if (variable->label) {
+        fprintf(ctx->fp, ", \"label\": \"%s\" ", variable->label);
+    }
+
+    printf("variable index is %d for %s\n", variable->index, variable->name);
+    variable->label_set = &ctx->label_set[variable->index];
+    if (variable->label_set) {
+        //fprintf(ctx->fp, ", \"missing\": { \"type\": \"DISCRETE\", \"values\": [");
+        for (int i=0; i<variable->label_set->value_labels_count; i++) {
+            readstat_value_label_t* value_label = &variable->label_set->value_labels[i]; 
+            printf("code: %lf label: %s \n", value_label->double_key, value_label->label);
+            //fprintf(ctx->fp, ", \"categories\": [] ");
+        }
+    }
+
     if (variable->missingness.missing_ranges_count) {
         fprintf(ctx->fp, ", \"missing\": { \"type\": \"DISCRETE\", \"values\": [");
         for (int i=0; i<variable->missingness.missing_ranges_count; i++) {
@@ -72,7 +131,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     struct context ctx;
-    ctx.count = 0;
+    memset(&ctx, 0, sizeof(struct context));
 
     FILE* fp = fopen(argv[2], "w");
     if (fp == NULL) {
@@ -84,6 +143,7 @@ int main(int argc, char *argv[]) {
     readstat_error_t error = READSTAT_OK;
     readstat_parser_t *parser = readstat_parser_init();
     readstat_set_variable_handler(parser, &handle_variable);
+    readstat_set_value_label_handler(parser, &handle_value_label);
 
     error = readstat_parse_sav(parser, argv[1], &ctx);
 
