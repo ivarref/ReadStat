@@ -151,6 +151,10 @@ void produce_column_header(void *s, size_t len, void *data) {
         fprintf(stderr, "%s:%d unsupported column type: %x\n", __FILE__, __LINE__, coltype);
         exit(EXIT_FAILURE);
     }
+
+    if (c->pass == 2 && coltype == READSTAT_TYPE_STRING) {
+        var->storage_width = c->column_width[c->columns];
+    }
     
     var->index = c->columns;
     copy_variable_property(c->json_md, column, "label", var->label, sizeof(var->label));
@@ -161,7 +165,7 @@ void produce_column_header(void *s, size_t len, void *data) {
         produce_value_label(column, len, c, coltype);
     }
 
-    if (c->parser->variable_handler) {
+    if (c->parser->variable_handler && c->pass == 2) {
         c->parser->variable_handler(c->columns, var, column, c->user_ctx);
     }
 }

@@ -131,7 +131,7 @@ void csv_metadata_cell(void *s, size_t len, void *data)
     } else if (c->rows >= 1 && c->parser->value_handler) {
         produce_csv_column_value(s, len, data);
     }
-    if (c->rows >= 1) {
+    if (c->rows >= 1 && c->pass == 1) {
         size_t w = c->column_width[c->columns];
         c->column_width[c->columns] = (len>w) ? len : w;
     }
@@ -144,7 +144,7 @@ void csv_metadata_row(int cc, void *data)
     UNUSED(cc);
     struct csv_metadata *c = (struct csv_metadata *)data;
     c->rows++;
-    if (c->rows == 1) {
+    if (c->rows == 1 && c->pass == 1) {
         c->column_width = calloc(c->columns, sizeof(size_t));
         c->_columns = c->columns;
     }
@@ -152,20 +152,25 @@ void csv_metadata_row(int cc, void *data)
     c->open_row = 0;
 }
 
-readstat_error_t readstat_parse_csv(readstat_parser_t *parser, const char *path, const char *jsonpath, void *user_ctx) {
+readstat_error_t readstat_parse_csv(readstat_parser_t *parser, const char *path, const char *jsonpath, struct csv_metadata* md, void *user_ctx) {
     readstat_error_t retval = READSTAT_OK;
     readstat_io_t *io = parser->io;
     size_t file_size = 0;
     size_t bytes_read;
     struct csv_parser csvparser;
-    struct csv_parser* p = &csvparser;
+    struct csv_parser *p = &csvparser;
     char buf[BUFSIZ];
-    struct csv_metadata metadata;
-    struct csv_metadata* md = &metadata;
-    memset(md, 0, sizeof(csv_metadata));
+    size_t* column_width = md->column_width;
+    md->pass = column_width ? 2 : 1;
+    md->open_row = 0;
+    md->columns = 0;
+    md->_rows = md->rows;
+    md->rows = 0;
     md->parser = parser;
     md->user_ctx = user_ctx;
     md->json_md = NULL;
+
+    fprintf(stdout, "pass is %d\n", md->pass);
 
     if ((md->json_md = get_json_metadata(jsonpath)) == NULL) {
         fprintf(stderr, "Could not get JSON metadata\n");
@@ -207,15 +212,11 @@ readstat_error_t readstat_parse_csv(readstat_parser_t *parser, const char *path,
     if (!md->open_row) {
         md->rows--;
     }
-    if (parser->info_handler) {
+    if (parser->info_handler && md->pass == 1) {
         parser->info_handler(md->rows, md->_columns, user_ctx);
     }
 
 cleanup:
-    if (md->column_width) {
-        free(md->column_width);
-        md->column_width = NULL;
-    }
     if (md->variables) {
         free(md->variables);
         md->variables = NULL;

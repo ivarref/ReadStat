@@ -4,9 +4,11 @@
 void produce_column_header(void *s, size_t len, void *data);
 
 typedef struct csv_metadata {
+    int pass;
     long rows;
     long columns;
     long _columns;
+    long _rows;
     size_t* column_width;
     int open_row;
     readstat_parser_t *parser;

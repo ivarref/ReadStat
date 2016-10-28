@@ -40,3 +40,6 @@ prof_output
 gmon.out
 gen.json
 extract_metadata
+*.csv
+*.json
+*.py

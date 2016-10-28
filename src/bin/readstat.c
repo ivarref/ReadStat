@@ -10,6 +10,7 @@
 #include "module.h"
 #include "modules/mod_readstat.h"
 #include "modules/mod_csv.h"
+#include "modules/produce_csv_column_header.h"
 
 #if HAVE_XLSXWRITER
 #include "modules/mod_xlsx.h"
@@ -244,7 +245,9 @@ static int convert_file(const char *input_filename, const char *catalog_filename
     const char *error_filename = NULL;
     struct timeval start_time, end_time;
     int input_format = format(input_filename);
+    struct csv_metadata csv_meta;
     rs_module_t *module = rs_module_for_filename(modules, modules_count, output_filename);
+    memset(&csv_meta, 0, sizeof(csv_metadata));
 
     gettimeofday(&start_time, NULL);
 
@@ -266,9 +269,9 @@ static int convert_file(const char *input_filename, const char *catalog_filename
     readstat_set_info_handler(pass1_parser, &handle_info);
     readstat_set_value_label_handler(pass1_parser, &handle_value_label);
     readstat_set_fweight_handler(pass1_parser, &handle_fweight);
-
+    
     if (catalog_filename && input_format == RS_FORMAT_CSV) {
-        error = readstat_parse_csv(pass1_parser, input_filename, catalog_filename, rs_ctx);
+        error = readstat_parse_csv(pass1_parser, input_filename, catalog_filename, &csv_meta, rs_ctx);
         error_filename = input_filename;
     } else if (catalog_filename) {
         error = parse_file(pass1_parser, catalog_filename, RS_FORMAT_SAS_CATALOG, rs_ctx);
@@ -280,6 +283,7 @@ static int convert_file(const char *input_filename, const char *catalog_filename
     if (error != READSTAT_OK)
         goto cleanup;
     
+    fprintf(stderr, "start pass two\n");
     // Pass 2 - Parse full file
     readstat_set_error_handler(pass2_parser, &handle_error);
     readstat_set_info_handler(pass2_parser, &handle_info);
@@ -289,7 +293,7 @@ static int convert_file(const char *input_filename, const char *catalog_filename
     readstat_set_value_handler(pass2_parser, &handle_value);
 
     if (catalog_filename && input_format == RS_FORMAT_CSV) {
-        error = readstat_parse_csv(pass2_parser, input_filename, catalog_filename, rs_ctx);
+        error = readstat_parse_csv(pass2_parser, input_filename, catalog_filename, &csv_meta, rs_ctx);
     } else {
         error = parse_file(pass2_parser, input_filename, input_format, rs_ctx);
     }
@@ -305,6 +309,10 @@ static int convert_file(const char *input_filename, const char *catalog_filename
             (start_time.tv_sec + 1e-6 * start_time.tv_usec));
 
 cleanup:
+    if (csv_meta.column_width) {
+        free(csv_meta.column_width);
+        csv_meta.column_width = NULL;
+    }
     readstat_parser_free(pass1_parser);
     readstat_parser_free(pass2_parser);
 
