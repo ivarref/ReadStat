@@ -11,34 +11,40 @@
 typedef struct context {
     int count;
     FILE* fp;
-    long variable_count;
+    int variable_count;
     readstat_label_set_t *label_set;
 } context;
 
+readstat_label_set_t * get_label_set(const char *val_labels, struct context *ctx, int* is_new) {
+    if (is_new) {
+        *is_new = 0;
+    }
+    for (int i=0; i<ctx->variable_count; i++) {
+        readstat_label_set_t * lbl = &ctx->label_set[i];
+        if (0 == strcmp(lbl->name, val_labels)) {
+            return lbl;
+        }
+    }
+    ctx->label_set = realloc(ctx->label_set, ++ctx->variable_count*sizeof(readstat_label_set_t));
+    if (!ctx->label_set) {
+        fprintf(stderr, "%s:%d realloc error: %s\n", __FILE__, __LINE__, strerror(errno));
+        return NULL;
+    }
+    readstat_label_set_t * lbl = &ctx->label_set[ctx->variable_count-1];
+    if (is_new) {
+        *is_new = 1;
+    }
+    memset(lbl, 0, sizeof(readstat_label_set_t));
+    return lbl;
+}
+
 static int handle_value_label(const char *val_labels, readstat_value_t value, const char *label, void *c) {
     struct context *ctx = (struct context*)c;
-    // TODO: Will this work with anything other than SAV?
     if (value.type == READSTAT_TYPE_DOUBLE && strncmp(val_labels, "labels", strlen("labels")) == 0) {
-        char* dest;
-        const char *src = val_labels+strlen("labels");
-        long idx = strtol(src, &dest, 10);
-        if (dest == src) {
-            fprintf(stderr, "%s:%d expected a number, got %s\n", __FILE__, __LINE__, src);
-            exit(EXIT_FAILURE);
+        readstat_label_set_t * label_set = get_label_set(val_labels, ctx, NULL);
+        if (!label_set) {
+            return READSTAT_ERROR_MALLOC;
         }
-        if (ctx->variable_count == idx) {
-            long size = idx+1;
-            ctx->label_set = realloc(ctx->label_set, size*sizeof(readstat_label_set_t));
-            if (!ctx->label_set) {
-                fprintf(stderr, "%s:%d realloc error: %s\n", __FILE__, __LINE__, strerror(errno));
-                return READSTAT_ERROR_MALLOC;
-            }
-
-            memset(&ctx->label_set[idx], 0, sizeof(readstat_label_set_t));
-            fprintf(stdout, "alloc for index %ld\n", idx);
-            ctx->variable_count++;
-        }
-        readstat_label_set_t* label_set = &ctx->label_set[idx];
         snprintf(label_set->name, sizeof(label_set->name)-1, "%s", val_labels);
         long label_idx = label_set->value_labels_count;
         label_set->value_labels = realloc(label_set->value_labels, (1 + label_idx) * sizeof(readstat_value_label_t));
@@ -47,15 +53,16 @@ static int handle_value_label(const char *val_labels, readstat_value_t value, co
         value_label->double_key = value.v.double_value;
         value_label->label = strdup(label);
         value_label->label_len = strlen(label);
-
         label_set->value_labels_count++;
     }
-    return 0;
+    return READSTAT_OK;
 }
 
 int handle_variable (int index, readstat_variable_t *variable, const char *val_labels, void *my_ctx) {
     struct context *ctx = (struct context *)my_ctx;
-    
+    int new = 0;
+    int* newp = &new;
+
     char* type = "";
     if (variable->type == READSTAT_TYPE_STRING) {
         type = "STRING";
@@ -88,21 +95,28 @@ int handle_variable (int index, readstat_variable_t *variable, const char *val_l
         fprintf(ctx->fp, ",\n");
     }
     
-    //fprintf(stdout, "enter column %s\n", variable->name);
     fprintf(ctx->fp, "{\"type\": \"%s\", \"name\": \"%s\"", type, variable->name);
     if (variable->label) {
         fprintf(ctx->fp, ", \"label\": \"%s\" ", variable->label);
     }
 
     printf("variable index is %d for %s\n", variable->index, variable->name);
-    variable->label_set = &ctx->label_set[variable->index];
-    if (variable->label_set) {
-        //fprintf(ctx->fp, ", \"missing\": { \"type\": \"DISCRETE\", \"values\": [");
-        for (int i=0; i<variable->label_set->value_labels_count; i++) {
-            readstat_value_label_t* value_label = &variable->label_set->value_labels[i]; 
-            printf("code: %lf label: %s \n", value_label->double_key, value_label->label);
-            //fprintf(ctx->fp, ", \"categories\": [] ");
+    if (val_labels) {
+        readstat_label_set_t * label_set = get_label_set(val_labels, ctx, newp);
+        if (*newp) {
+            fprintf(stderr, "Did not expect to allocate new label set!\n");
+            exit(EXIT_FAILURE);
         }
+        fprintf(ctx->fp, ", \"categories\": [");
+        for (int i=0; i<label_set->value_labels_count; i++) {
+            readstat_value_label_t* value_label = &label_set->value_labels[i];
+            if (i>0) {
+                fprintf(ctx->fp, ", ");
+            }
+            fprintf(ctx->fp, "{ \"code\": %lf, \"label\": \"%s\"} ", value_label->double_key, value_label->label);;
+            
+        }
+        fprintf(ctx->fp, "] ");
     }
 
     if (variable->missingness.missing_ranges_count) {
@@ -159,5 +173,13 @@ int main(int argc, char *argv[]) {
 
     fclose(fp);
     printf("extract_metadata exiting\n");
+    if (ctx.variable_count >=1) {
+        for (int i=0; i<ctx.variable_count-1; i++) {
+            readstat_label_set_t * label_set = &ctx.label_set[i];
+            free(label_set->value_labels);
+            free(label_set);
+        }
+    }
+
     return 0;
 }
