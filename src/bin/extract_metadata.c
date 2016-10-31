@@ -39,7 +39,7 @@ readstat_label_set_t * get_label_set(const char *val_labels, struct context *ctx
 
 static int handle_value_label(const char *val_labels, readstat_value_t value, const char *label, void *c) {
     struct context *ctx = (struct context*)c;
-    if (value.type == READSTAT_TYPE_DOUBLE && strncmp(val_labels, "labels", strlen("labels")) == 0) {
+    if (value.type == READSTAT_TYPE_DOUBLE || value.type == READSTAT_TYPE_STRING) {
         readstat_label_set_t * label_set = get_label_set(val_labels, ctx, 1);
         if (!label_set) {
             return READSTAT_ERROR_MALLOC;
@@ -53,12 +53,59 @@ static int handle_value_label(const char *val_labels, readstat_value_t value, co
         }
         readstat_value_label_t* value_label = &label_set->value_labels[label_idx];
         memset(value_label, 0, sizeof(readstat_value_label_t));
-        value_label->double_key = value.v.double_value;
+        if (value.type == READSTAT_TYPE_DOUBLE) {
+            value_label->double_key = value.v.double_value;
+        } else if (value.type == READSTAT_TYPE_STRING) {
+            value_label->string_key = strdup(value.v.string_value);
+            value_label->string_key_len = strlen(value.v.string_value);
+        }
         value_label->label = strdup(label);
         value_label->label_len = strlen(label);
         label_set->value_labels_count++;
+    } else {
+        fprintf(stderr, "%s:%d Unhandled value.type %d\n", __FILE__, __LINE__, value.type);
     }
     return READSTAT_OK;
+}
+
+int handle_variable_dummy (int index, readstat_variable_t *variable, const char *val_labels, void *my_ctx) {
+    return READSTAT_OK;
+}
+
+int escape(const char *s, char* dest) {
+    char c = s[0];
+    if (c == '\\') {
+        if (dest) {
+            dest[0] = '\\';
+            dest[1] = '\\';
+        }
+        return 2 + escape(&s[1], dest ? &dest[2] : NULL);
+    } else if (c == '"') {
+        if (dest) {
+            dest[0] = '\\';
+            dest[1] = '"';
+        }
+        return 2 + escape(&s[1], dest ? &dest[2] : NULL);
+    } else if (c) {
+        if (dest) {
+            dest[0] = c;
+        }
+        return 1 + escape(&s[1], dest ? &dest[1] : NULL);
+    } else {
+        if (dest) {
+            dest[0] = '"';
+            dest[1] = 0;
+        }
+        return 1;
+    }
+}
+
+char* quote_and_escape(const char *src) {
+    int newlen = 2 + escape(src, NULL);
+    char *dest = malloc(newlen);
+    dest[0] = '"';
+    escape(src, &dest[1]);
+    return dest;
 }
 
 int handle_variable (int index, readstat_variable_t *variable, const char *val_labels, void *my_ctx) {
@@ -98,7 +145,9 @@ int handle_variable (int index, readstat_variable_t *variable, const char *val_l
     
     fprintf(ctx->fp, "{\"type\": \"%s\", \"name\": \"%s\"", type, variable->name);
     if (variable->label) {
-        fprintf(ctx->fp, ", \"label\": \"%s\" ", variable->label);
+        char* lbl = quote_and_escape(variable->label);
+        fprintf(ctx->fp, ", \"label\": %s", lbl);
+        free(lbl);
     }
 
     if (val_labels) {
@@ -113,7 +162,21 @@ int handle_variable (int index, readstat_variable_t *variable, const char *val_l
             if (i>0) {
                 fprintf(ctx->fp, ", ");
             }
-            fprintf(ctx->fp, "{ \"code\": %lf, \"label\": \"%s\"} ", value_label->double_key, value_label->label);;
+            if (variable->type == READSTAT_TYPE_DOUBLE) {
+                char* lbl = quote_and_escape(value_label->label);
+                fprintf(ctx->fp, "{ \"code\": %lf, \"label\": %s} ", value_label->double_key, lbl);
+                free(lbl);
+            } else if (variable->type == READSTAT_TYPE_STRING) {
+                char* lbl = quote_and_escape(value_label->label);
+                char* stringkey = quote_and_escape(value_label->string_key);
+                fprintf(ctx->fp, "{ \"code\": %s, \"label\": %s} ", stringkey, lbl);
+                free(lbl);
+                free(stringkey);
+            } else {
+                fprintf(stderr, "%s:%d Unsupported type %d\n", __FILE__, __LINE__, variable->type);
+                exit(EXIT_FAILURE);
+            }
+            
             
         }
         fprintf(ctx->fp, "] ");
@@ -173,13 +236,13 @@ int main(int argc, char *argv[]) {
 
     fclose(fp);
     printf("extract_metadata exiting\n");
-    if (ctx.variable_count >=1) {
-        for (int i=0; i<ctx.variable_count-1; i++) {
-            readstat_label_set_t * label_set = &ctx.label_set[i];
-            free(label_set->value_labels);
-            free(label_set);
-        }
-    }
+    // if (ctx.variable_count >=1) {
+    //     for (int i=0; i<ctx.variable_count-1; i++) {
+    //         readstat_label_set_t * label_set = &ctx.label_set[i];
+    //         free(label_set->value_labels);
+    //         free(label_set);
+    //     }
+    // }
 
     return 0;
 }
