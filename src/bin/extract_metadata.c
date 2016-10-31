@@ -1,4 +1,3 @@
-#define _BSD_SOURCE
 #include "../readstat.h"
 #include <stdio.h>
 #include <sys/stat.h>
@@ -6,7 +5,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <string.h>
 
 typedef struct context {
     int count;
@@ -56,10 +54,14 @@ static int handle_value_label(const char *val_labels, readstat_value_t value, co
         if (value.type == READSTAT_TYPE_DOUBLE) {
             value_label->double_key = value.v.double_value;
         } else if (value.type == READSTAT_TYPE_STRING) {
-            value_label->string_key = strdup(value.v.string_value);
+            char *string_key = malloc(strlen(value.v.string_value) + 1);
+            strcpy(string_key, value.v.string_value);
+            value_label->string_key = string_key;
             value_label->string_key_len = strlen(value.v.string_value);
         }
-        value_label->label = strdup(label);
+        char *lbl = malloc(strlen(label) + 1);
+        strcpy(lbl, label);
+        value_label->label = lbl;
         value_label->label_len = strlen(label);
         label_set->value_labels_count++;
     } else {
