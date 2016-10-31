@@ -136,10 +136,11 @@ int handle_variable (int index, readstat_variable_t *variable, const char *val_l
     
     if (ctx->count == 0) {
         ctx->count = 1;
-        fprintf(ctx->fp, "{\"%s\": \"%s\",\n  \"%s\": [\n", "type", "STATA", "variables");
+        fprintf(ctx->fp, "{\"%s\": \"%s\",\n  \"%s\": [\n", "type", "SPSS", "variables");
     } else {
         fprintf(ctx->fp, ",\n");
     }
+
     
     fprintf(ctx->fp, "{\"type\": \"%s\", \"name\": \"%s\"", type, variable->name);
     if (variable->label) {
@@ -183,7 +184,18 @@ int handle_variable (int index, readstat_variable_t *variable, const char *val_l
     if (variable->missingness.missing_ranges_count) {
         fprintf(ctx->fp, ", \"missing\": { \"type\": \"DISCRETE\", \"values\": [");
         for (int i=0; i<variable->missingness.missing_ranges_count; i++) {
-            if (variable->type == READSTAT_TYPE_DOUBLE) {
+            int skip = 0;
+            for (int j=0; j<variable->missingness.missing_ranges_count; j++) {
+                if (j<i && variable->type == READSTAT_TYPE_DOUBLE &&
+                    variable->missingness.missing_ranges[i].v.double_value ==
+                    variable->missingness.missing_ranges[j].v.double_value) {
+                        skip = 1;
+                }
+            }
+
+            if (skip) continue;
+
+            if (variable->type == READSTAT_TYPE_DOUBLE && !skip) {
                 double v = variable->missingness.missing_ranges[i].v.double_value;
                 if (i>0) {
                     fprintf(ctx->fp, ", ");
