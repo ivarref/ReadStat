@@ -26,14 +26,15 @@ readstat_label_set_t * get_label_set(const char *val_labels, struct context *ctx
         fprintf(stderr, "%s:%d could not find value labels %s\n", __FILE__, __LINE__, val_labels);
         return NULL;
     }
-
-    ctx->label_set = realloc(ctx->label_set, ++ctx->variable_count*sizeof(readstat_label_set_t));
+    ctx->variable_count++;
+    ctx->label_set = realloc(ctx->label_set, ctx->variable_count*sizeof(readstat_label_set_t));
     if (!ctx->label_set) {
         fprintf(stderr, "%s:%d realloc error: %s\n", __FILE__, __LINE__, strerror(errno));
         return NULL;
     }
     readstat_label_set_t * lbl = &ctx->label_set[ctx->variable_count-1];
     memset(lbl, 0, sizeof(readstat_label_set_t));
+    snprintf(lbl->name, sizeof(lbl->name)-1, "%s", val_labels);
     return lbl;
 }
 
@@ -44,7 +45,6 @@ static int handle_value_label(const char *val_labels, readstat_value_t value, co
         if (!label_set) {
             return READSTAT_ERROR_MALLOC;
         }
-        snprintf(label_set->name, sizeof(label_set->name)-1, "%s", val_labels);
         long label_idx = label_set->value_labels_count;
         label_set->value_labels = realloc(label_set->value_labels, (1 + label_idx) * sizeof(readstat_value_label_t));
         if (!label_set->value_labels) {
@@ -65,10 +65,6 @@ static int handle_value_label(const char *val_labels, readstat_value_t value, co
     } else {
         fprintf(stderr, "%s:%d Unhandled value.type %d\n", __FILE__, __LINE__, value.type);
     }
-    return READSTAT_OK;
-}
-
-int handle_variable_dummy (int index, readstat_variable_t *variable, const char *val_labels, void *my_ctx) {
     return READSTAT_OK;
 }
 
@@ -236,13 +232,22 @@ int main(int argc, char *argv[]) {
 
     fclose(fp);
     printf("extract_metadata exiting\n");
-    // if (ctx.variable_count >=1) {
-    //     for (int i=0; i<ctx.variable_count-1; i++) {
-    //         readstat_label_set_t * label_set = &ctx.label_set[i];
-    //         free(label_set->value_labels);
-    //         free(label_set);
-    //     }
-    // }
+    if (ctx.variable_count >=1) {
+        for (int i=0; i<ctx.variable_count; i++) {
+            readstat_label_set_t * label_set = &ctx.label_set[i];
+            for (int j=0; j<label_set->value_labels_count; j++) {
+                readstat_value_label_t* value_label = &label_set->value_labels[j];
+                if (value_label->string_key) {
+                    free(value_label->string_key);
+                } 
+                if (value_label->label) {
+                    free(value_label->label);
+                }
+            }
+            free(label_set->value_labels);
+        }
+        free(ctx.label_set);
+    }
 
     return 0;
 }
