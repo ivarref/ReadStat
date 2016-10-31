@@ -262,6 +262,5 @@ int main(int argc, char *argv[]) {
         }
         free(ctx.label_set);
     }
-
     return 0;
 }

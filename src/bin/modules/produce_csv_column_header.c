@@ -53,6 +53,12 @@ char* produce_value_label(char* column, size_t len, struct csv_metadata *c, read
                 value.tag = 'a' + (missing_idx-1);
             }
             c->parser->value_label_handler(column, value, label, c->user_ctx);
+        } else if (coltype == READSTAT_TYPE_STRING) {
+            readstat_value_t value = {
+                .v = { .string_value = code },
+                .type = READSTAT_TYPE_STRING,
+            };
+            c->parser->value_label_handler(column, value, label, c->user_ctx);
         } else {
             fprintf(stderr, "%s:%d unsupported column type for value label\n", __FILE__, __LINE__);
             exit(EXIT_FAILURE);
