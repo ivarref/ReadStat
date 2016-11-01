@@ -108,7 +108,7 @@ extract_metadata_SOURCES = \
 	src/bin/extract_metadata.c
 
 readstat_LDADD = libreadstat.la
-readstat_CFLAGS = -Wall -std=c99
+readstat_CFLAGS = -Wall -pedantic-errors -std=c99
 
 extract_metadata_LDADD = libreadstat.la
 extract_metadata_CFLAGS = -Wall -pedantic-errors -std=c99
