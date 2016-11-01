@@ -13,9 +13,9 @@ int readstat_dta_num_days(char *s) {
     int daysPerMonth[] =     {31,28,31,30,31,30,31,31,30,31,30,31};
     int daysPerMonthLeap[] = {31,29,31,30,31,30,31,31,30,31,30,31};
     int year, month, day;
-    sscanf(s, "%d-%d-%d", &year, &month, &day);
+    int ret = sscanf(s, "%d-%d-%d", &year, &month, &day);
     month--;
-    if (month < 0 || month > 11) {
+    if (month < 0 || month > 11 || ret!=3) {
         fprintf(stderr, "%s:%d not a date: %s\n", __FILE__, __LINE__, (char*)s);
         exit(EXIT_FAILURE);
     }

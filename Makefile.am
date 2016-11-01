@@ -108,7 +108,7 @@ extract_metadata_SOURCES = \
 	src/bin/extract_metadata.c
 
 readstat_LDADD = libreadstat.la
-readstat_CFLAGS = -Wall -pedantic-errors -std=c99
+readstat_CFLAGS = 
 
 extract_metadata_LDADD = libreadstat.la
 extract_metadata_CFLAGS = -Wall -pedantic-errors -std=c99
@@ -126,9 +126,7 @@ readstat_CFLAGS += -DHAVE_CSVREADER=1
 endif
 
 check_PROGRAMS = \
-	test_readstat \
-	test_csv_to_dta \
-	test_performance
+	test_readstat
 
 test_readstat_SOURCES = \
 	src/test/test_buffer.c \
@@ -140,29 +138,9 @@ test_readstat_SOURCES = \
 	src/test/test_write.c
 
 test_readstat_LDADD = libreadstat.la
-test_readstat_CFLAGS = -pg -g
-
-test_csv_to_dta_SOURCES = \
-	src/test/test_csv_to_dta.c
-
-test_performance_SOURCES = \
-	src/test/test_performance.c
-
-test_csv_to_dta_LDADD = libreadstat.la
-test_csv_to_dta_CFLAGS = -g -Wextra -Werror -pedantic-errors -std=c99
-
-test_performance_LDADD = libreadstat.la
-test_performance_CFLAGS = -g -Wextra -Werror -pedantic-errors -std=c99
+test_readstat_CFLAGS = 
 
 TESTS = test_readstat
-
-.PHONY: check-valgrind ;
-
-check-valgrind: $(TESTS)
-	@for test in $$(echo $(TESTS) | sed 's/tests\//tests\/.libs\//g') ; do \
-		CK_FORK=no libtool --mode=execute valgrind --error-exitcode=1 \
-		--leak-check=full $${test} ; \
-		done
 
 install-exec-hook:
 	@(cd $(DESTDIR)$(libdir) && $(RM) $(lib_LTLIBRARIES))
