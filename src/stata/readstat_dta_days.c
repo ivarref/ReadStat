@@ -1,28 +1,29 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <errno.h>
 #include <string.h>
 
 static inline int is_leap(int year) {
     return ((year % 4 == 0 && year % 100 != 0) || year % 400 ==0);
 }
 
-int readstat_dta_num_days(char *s) {
+int readstat_dta_num_days(char *s, char **dest) {
     int daysPerMonth[] =     {31,28,31,30,31,30,31,31,30,31,30,31};
     int daysPerMonthLeap[] = {31,29,31,30,31,30,31,31,30,31,30,31};
     int year, month, day;
+    if (strlen(s) == 0) {
+        *dest = s;
+        return 0;
+    }
     int ret = sscanf(s, "%d-%d-%d", &year, &month, &day);
     month--;
     if (month < 0 || month > 11 || ret!=3) {
-        fprintf(stderr, "%s:%d not a date: %s\n", __FILE__, __LINE__, (char*)s);
-        exit(EXIT_FAILURE);
+        *dest = s;
+        return 0;
     }
     int maxdays = (is_leap(year) ? daysPerMonthLeap : daysPerMonth)[month]; 
     if (day < 1 || day > maxdays) {
-        fprintf(stderr, "%s:%d not a date: %s\n", __FILE__, __LINE__, (char*)s);
-        exit(EXIT_FAILURE);
+        *dest =s;
+        return 0;
     } else {
         int days = 0;
 
@@ -39,6 +40,8 @@ int readstat_dta_num_days(char *s) {
         }
 
         days += day-1;
+        char buf[1024];
+        *dest = s + snprintf(buf, sizeof(buf)-1, "%d-%d-%d", year, month+1, day); 
         return days;
     }
 }

@@ -127,7 +127,7 @@ endif
 
 check_PROGRAMS = \
 	test_readstat \
-	test_csv_to_dta
+	test_dta_days
 
 test_readstat_SOURCES = \
 	src/test/test_buffer.c \
@@ -141,13 +141,13 @@ test_readstat_SOURCES = \
 test_readstat_LDADD = libreadstat.la
 test_readstat_CFLAGS = 
 
-test_csv_to_dta_SOURCES = \
-	src/test/test_csv_to_dta.c
+test_dta_days_SOURCES = \
+	src/test/test_dta_days.c
 
-test_csv_to_dta_LDADD = libreadstat.la
-test_csv_to_dta_CFLAGS = -g -Wall -Werror -pedantic-errors -std=c99
+test_dta_days_LDADD = libreadstat.la
+test_dta_days_CFLAGS = -g -Wall -Werror -pedantic-errors -std=c99
 
-TESTS = test_readstat test_csv_to_dta
+TESTS = test_readstat test_dta_days
 
 install-exec-hook:
 	@(cd $(DESTDIR)$(libdir) && $(RM) $(lib_LTLIBRARIES))

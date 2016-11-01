@@ -35,7 +35,7 @@ test_csv_to_dta*
 *.swp
 dev/
 tmp.*
-test_performance
+test_dta_days
 prof_output
 gmon.out
 gen.json

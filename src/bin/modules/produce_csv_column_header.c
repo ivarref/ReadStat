@@ -42,7 +42,12 @@ char* produce_value_label(char* column, size_t len, struct csv_metadata *c, read
             }
             c->parser->value_label_handler(column, value, label, c->user_ctx);
         } else if (coltype == READSTAT_TYPE_INT32) {
-            int days = readstat_dta_num_days(code);
+            char *dest;
+            int days = readstat_dta_num_days(code, &dest);
+            if (dest == code) {
+                fprintf(stderr, "%s:%d not a valid date: %s\n", __FILE__, __LINE__, code);
+                exit(EXIT_FAILURE);
+            }
             readstat_value_t value = {
                 .v = { .i32_value = days },
                 .type = READSTAT_TYPE_INT32,
@@ -94,7 +99,11 @@ readstat_value_t get_int32_missing(const char *js, jsmntok_t* missing_value_toke
     char buf[255];
     int len = missing_value_token->end - missing_value_token->start;
     snprintf(buf, sizeof(buf)-1, "%.*s", len, js + missing_value_token->start);
-    int days = readstat_dta_num_days(buf);
+    char* dest;
+    int days = readstat_dta_num_days(buf, &dest);
+    if (dest == buf) {
+        
+    }
     readstat_value_t value = {
         .type = READSTAT_TYPE_INT32,
         .is_system_missing = 0,

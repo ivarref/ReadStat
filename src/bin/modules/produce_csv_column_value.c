@@ -1,10 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
-#define __USE_XOPEN
-#include <time.h>
-#include <unistd.h>
-#include <errno.h>
 
 #include "../../readstat.h"
 #include "../module_util.h"
@@ -57,7 +52,12 @@ readstat_value_t value_double(void *s, size_t len, struct csv_metadata *c) {
 
 readstat_value_t value_int32(void *s, size_t len, struct csv_metadata *c) {
     readstat_variable_t *var = &c->variables[c->columns];
-    int val = readstat_dta_num_days(s);
+    char* dest;
+    int val = readstat_dta_num_days(s, &dest);
+    if (dest == s) {
+        fprintf(stderr, "%s:%d not a date: %s\n", __FILE__, __LINE__, (char*)s);
+        exit(EXIT_FAILURE);
+    }
 
     for (int i=0; i<var->missingness.missing_ranges_count; i++) {
         if (val == var->missingness.missing_ranges[i].v.i32_value) {
