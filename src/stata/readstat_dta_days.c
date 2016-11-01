@@ -1,13 +1,6 @@
-#ifdef __CYGWIN__
-// This define blocks some functions such as strptime() that are required
-// taken from https://github.com/YasserAsmi/jvar/issues/20
-#undef __STRICT_ANSI__
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#define __USE_XOPEN
-#include <time.h>
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
@@ -17,31 +10,35 @@ static inline int is_leap(int year) {
 }
 
 int readstat_dta_num_days(char *s) {
-    struct tm tim;
-    memset(&tim, 0, sizeof(struct tm));
-    char *ss = strptime(s, "%Y-%m-%d", &tim);
-    if (!ss) {
+    int daysPerMonth[] =     {31,28,31,30,31,30,31,31,30,31,30,31};
+    int daysPerMonthLeap[] = {31,29,31,30,31,30,31,31,30,31,30,31};
+    int year, month, day;
+    sscanf(s, "%d-%d-%d", &year, &month, &day);
+    month--;
+    if (month < 0 || month > 11) {
+        fprintf(stderr, "%s:%d not a date: %s\n", __FILE__, __LINE__, (char*)s);
+        exit(EXIT_FAILURE);
+    }
+    int maxdays = (is_leap(year) ? daysPerMonthLeap : daysPerMonth)[month]; 
+    if (day < 1 || day > maxdays) {
         fprintf(stderr, "%s:%d not a date: %s\n", __FILE__, __LINE__, (char*)s);
         exit(EXIT_FAILURE);
     } else {
         int days = 0;
-        int destYear = tim.tm_year+1900;
-        int daysPerMonth[] =     {31,28,31,30,31,30,31,31,30,31,30,31};
-        int daysPerMonthLeap[] = {31,29,31,30,31,30,31,31,30,31,30,31};
 
-        for (int i=destYear; i<1960; i++) {
+        for (int i=year; i<1960; i++) {
             days -= is_leap(i) ? 366 : 365;
         }
 
-        for (int i=1960; i<destYear; i++) {
+        for (int i=1960; i<year; i++) {
             days += is_leap(i) ? 366 : 365;
         }
        
-        for (int m=0; m<tim.tm_mon; m++) {
-            days += is_leap(destYear) ? daysPerMonthLeap[m] : daysPerMonth[m];
+        for (int m=0; m<month; m++) {
+            days += is_leap(year) ? daysPerMonthLeap[m] : daysPerMonth[m];
         }
 
-        days += tim.tm_mday-1;
+        days += day-1;
         return days;
     }
 }
