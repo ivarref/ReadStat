@@ -10,7 +10,11 @@
 #include "module.h"
 #include "modules/mod_readstat.h"
 #include "modules/mod_csv.h"
+
+#if HAVE_CSVREADER
 #include "modules/produce_csv_column_header.h"
+#include "modules/mod_csv_reader.h"
+#endif
 
 #if HAVE_XLSXWRITER
 #include "modules/mod_xlsx.h"
@@ -51,8 +55,10 @@ int format(const char *filename) {
     if (strncmp(filename + len - 4, ".por", 4) == 0)
         return RS_FORMAT_POR;
 
+    #if HAVE_CSVREADER
     if (strncmp(filename + len - 4, ".csv", 4) == 0)
         return RS_FORMAT_CSV;
+    #endif
 
     if (strncmp(filename + len - 4, ".xpt", 4) == 0)
         return RS_FORMAT_XPORT;
@@ -245,9 +251,11 @@ static int convert_file(const char *input_filename, const char *catalog_filename
     const char *error_filename = NULL;
     struct timeval start_time, end_time;
     int input_format = format(input_filename);
-    struct csv_metadata csv_meta;
     rs_module_t *module = rs_module_for_filename(modules, modules_count, output_filename);
+    #if HAVE_CSVREADER
+    struct csv_metadata csv_meta;
     memset(&csv_meta, 0, sizeof(csv_metadata));
+    #endif
 
     gettimeofday(&start_time, NULL);
 
@@ -270,12 +278,17 @@ static int convert_file(const char *input_filename, const char *catalog_filename
     readstat_set_value_label_handler(pass1_parser, &handle_value_label);
     readstat_set_fweight_handler(pass1_parser, &handle_fweight);
     
-    if (catalog_filename && input_format == RS_FORMAT_CSV) {
-        error = readstat_parse_csv(pass1_parser, input_filename, catalog_filename, &csv_meta, rs_ctx);
-        error_filename = input_filename;
-    } else if (catalog_filename) {
+    if (catalog_filename && input_format != RS_FORMAT_CSV) {
         error = parse_file(pass1_parser, catalog_filename, RS_FORMAT_SAS_CATALOG, rs_ctx);
         error_filename = catalog_filename;
+    } else if (catalog_filename && input_format == RS_FORMAT_CSV) {
+        #if HAVE_CSVREADER
+            error = readstat_parse_csv(pass1_parser, input_filename, catalog_filename, &csv_meta, rs_ctx);
+            error_filename = input_filename;
+        #else
+            fprintf(stderr, "Should never happen... Fix macros\n");
+            exit(EXIT_FAILURE);
+        #endif
     } else {
         error = parse_file(pass1_parser, input_filename, input_format, rs_ctx);
         error_filename = input_filename;
@@ -293,7 +306,12 @@ static int convert_file(const char *input_filename, const char *catalog_filename
     readstat_set_value_handler(pass2_parser, &handle_value);
 
     if (catalog_filename && input_format == RS_FORMAT_CSV) {
-        error = readstat_parse_csv(pass2_parser, input_filename, catalog_filename, &csv_meta, rs_ctx);
+        #if HAVE_CSVREADER
+            error = readstat_parse_csv(pass2_parser, input_filename, catalog_filename, &csv_meta, rs_ctx);
+        #else
+            fprintf(stderr, "Should never happen... Fix macros\n");
+            exit(EXIT_FAILURE);
+        #endif
     } else {
         error = parse_file(pass2_parser, input_filename, input_format, rs_ctx);
     }
@@ -309,10 +327,12 @@ static int convert_file(const char *input_filename, const char *catalog_filename
             (start_time.tv_sec + 1e-6 * start_time.tv_usec));
 
 cleanup:
+    #if HAVE_CSVREADER
     if (csv_meta.column_width) {
         free(csv_meta.column_width);
         csv_meta.column_width = NULL;
     }
+    #endif
     readstat_parser_free(pass1_parser);
     readstat_parser_free(pass2_parser);
 

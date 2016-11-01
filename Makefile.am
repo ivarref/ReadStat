@@ -119,7 +119,11 @@ readstat_LDADD += -lxlsxwriter
 readstat_CFLAGS += -DHAVE_XLSXWRITER=1
 endif
 
+if HAVE_CSVREADER
+readstat_SOURCES += src/bin/modules/mod_csv_reader.c
 readstat_LDADD += -lcsv
+readstat_CFLAGS += -DHAVE_CSVREADER=1
+endif
 
 check_PROGRAMS = \
 	test_readstat \
@@ -150,7 +154,7 @@ test_csv_to_dta_CFLAGS = -g -Wextra -Werror -pedantic-errors -std=c99
 test_performance_LDADD = libreadstat.la
 test_performance_CFLAGS = -g -Wextra -Werror -pedantic-errors -std=c99
 
-TESTS = test_readstat test_csv_to_dta test_performance
+TESTS = test_readstat
 
 .PHONY: check-valgrind ;
 
