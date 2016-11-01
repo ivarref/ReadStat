@@ -126,7 +126,8 @@ readstat_CFLAGS += -DHAVE_CSVREADER=1
 endif
 
 check_PROGRAMS = \
-	test_readstat
+	test_readstat \
+	test_csv_to_dta
 
 test_readstat_SOURCES = \
 	src/test/test_buffer.c \
@@ -140,7 +141,13 @@ test_readstat_SOURCES = \
 test_readstat_LDADD = libreadstat.la
 test_readstat_CFLAGS = 
 
-TESTS = test_readstat
+test_csv_to_dta_SOURCES = \
+	src/test/test_csv_to_dta.c
+
+test_csv_to_dta_LDADD = libreadstat.la
+test_csv_to_dta_CFLAGS = -g -Wall -Werror -pedantic-errors -std=c99
+
+TESTS = test_readstat test_csv_to_dta
 
 install-exec-hook:
 	@(cd $(DESTDIR)$(libdir) && $(RM) $(lib_LTLIBRARIES))
