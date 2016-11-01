@@ -97,7 +97,7 @@ static int handle_value(int obs_index, readstat_variable_t *variable, readstat_v
         __mingw_fprintf(mod_ctx->out_file, "%hhd", readstat_int8_value(value));
         #else
         fprintf(mod_ctx->out_file, "%hhd", readstat_int8_value(value));
-        #fi
+        #endif
     } else if (type == READSTAT_TYPE_INT16) {
         fprintf(mod_ctx->out_file, "%hd", readstat_int16_value(value));
     } else if (type == READSTAT_TYPE_INT32 && variable->format && variable->format[0] && 0 == strncmp("%td", variable->format, strlen("%td"))) {
