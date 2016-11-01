@@ -1,3 +1,8 @@
+#ifdef __CYGWIN__
+// This define blocks some functions such as strptime() that are required
+// taken from https://github.com/YasserAsmi/jvar/issues/20
+#undef __STRICT_ANSI__
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
