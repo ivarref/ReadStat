@@ -7,14 +7,12 @@
 #include "../../readstat.h"
 #include "../module_util.h"
 #include "../module.h"
-
 #include "../../stata/readstat_dta_days.h"
 
 typedef struct mod_csv_ctx_s {
     FILE *out_file;
     long var_count;
 } mod_csv_ctx_t;
-
 
 static int accept_file(const char *filename);
 static void *ctx_init(const char *filename);
