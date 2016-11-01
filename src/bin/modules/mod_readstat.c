@@ -69,7 +69,6 @@ static int accept_file(const char *filename) {
 }
 
 static void *ctx_init(const char *filename) {
-    size_t len = strlen(filename);
     mod_readstat_ctx_t *mod_ctx = malloc(sizeof(mod_readstat_ctx_t));
     mod_ctx->label_set_dict = ck_hash_table_init(1024);
     mod_ctx->is_sav = rs_ends_with(filename, ".sav");
