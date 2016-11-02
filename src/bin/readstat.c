@@ -266,8 +266,10 @@ static int convert_file(const char *input_filename, const char *catalog_filename
 
     void *module_ctx = module->init(output_filename);
 
-    if (module_ctx == NULL)
+    if (module_ctx == NULL) {
+        error = READSTAT_ERROR_OPEN;
         goto cleanup;
+    }
 
     rs_ctx->module = module;
     rs_ctx->module_ctx = module_ctx;
