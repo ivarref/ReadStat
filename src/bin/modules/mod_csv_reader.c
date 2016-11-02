@@ -93,7 +93,6 @@ readstat_error_t readstat_parse_csv(readstat_parser_t *parser, const char *path,
     }
     unsigned char sep = get_separator(md->json_md);
     csv_set_delim(p, sep);
-    fprintf(stderr, "separator is %x\n", sep);
     
     while ((bytes_read = io->read(buf, sizeof(buf), io->io_ctx)) > 0)
     {
