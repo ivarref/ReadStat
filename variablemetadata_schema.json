@@ -17,6 +17,11 @@
                         "SPSS"
                     ]
                 },
+                "separator": {
+                    "enum": [
+                        ",", ";", "\t"
+                    ]
+                },
                 "variables": {
                     "type": "array",
                     "items": {
@@ -327,6 +332,11 @@
                 "type": {
                     "enum": [
                         "STATA"
+                    ]
+                },
+                "separator": {
+                    "enum": [
+                        ",", ";", "\t"
                     ]
                 },
                 "variables": {
