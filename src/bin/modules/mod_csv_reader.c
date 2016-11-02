@@ -66,6 +66,7 @@ readstat_error_t readstat_parse_csv(readstat_parser_t *parser, const char *path,
 
     if ((md->json_md = get_json_metadata(jsonpath)) == NULL) {
         fprintf(stderr, "Could not get JSON metadata\n");
+        retval = READSTAT_ERROR_PARSE;
         goto cleanup;
     }
 
@@ -90,6 +91,9 @@ readstat_error_t readstat_parse_csv(readstat_parser_t *parser, const char *path,
         retval = READSTAT_ERROR_OPEN;
         goto cleanup;
     }
+    unsigned char sep = get_separator(md->json_md);
+    csv_set_delim(p, sep);
+    fprintf(stderr, "separator is %x\n", sep);
     
     while ((bytes_read = io->read(buf, sizeof(buf), io->io_ctx)) > 0)
     {

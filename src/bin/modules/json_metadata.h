@@ -13,6 +13,7 @@ struct json_metadata* get_json_metadata(const char* filename);
 readstat_type_t column_type(struct json_metadata* md, char* varname);
 void free_json_metadata(struct json_metadata*);
 
+unsigned char get_separator(struct json_metadata* md);
 int missing_double_idx(struct json_metadata* md, char* varname, double v);
 int missing_string_idx(struct json_metadata* md, char* varname, char* v);
 char* copy_variable_property(struct json_metadata* md, const char* varname, const char* property, char* dest, size_t maxsize);

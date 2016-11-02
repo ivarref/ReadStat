@@ -56,6 +56,23 @@ char* get_object_property(const char *js, jsmntok_t *t, const char* propname, ch
 	return dest;
 }
 
+unsigned char get_separator(struct json_metadata* md) {
+	jsmntok_t* token = find_object_property(md->js, md->tok, "separator");
+	if (!token) {
+		return ',';
+	} else {
+		int len = token->end - token->start;
+		const char *tokenstr = md->js + token->start;
+		if (len == 1) {
+			return tokenstr[0];
+		} else if (len == 2 && tokenstr[0] == '\\' && tokenstr[1]=='t') {
+			return '\t';
+		} else {
+			return ',';
+		}
+	}
+}
+
 jsmntok_t* find_variable_property(const char *js, jsmntok_t *t, const char* varname, const char* property) {
     if (t->type != JSMN_OBJECT) {
         fprintf(stderr, "expected root token to be OBJECT\n");
