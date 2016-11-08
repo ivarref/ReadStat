@@ -214,9 +214,10 @@ int handle_variable (int index, readstat_variable_t *variable, const char *val_l
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
-        printf("Usage: %s <input-filename> <output-metadata.json>\n", argv[0]);
+        printf("Usage: %s <input-filename.(dta|sav)> <output-metadata.json>\n", argv[0]);
         return 1;
     }
+    int ret = 0;
     struct context ctx;
     memset(&ctx, 0, sizeof(struct context));
 
@@ -231,21 +232,37 @@ int main(int argc, char *argv[]) {
     readstat_parser_t *parser = readstat_parser_init();
     readstat_set_variable_handler(parser, &handle_variable);
     readstat_set_value_label_handler(parser, &handle_value_label);
+    
+    const char *filename = argv[1];
+    size_t len = strlen(filename);
 
-    error = readstat_parse_sav(parser, argv[1], &ctx);
+    if (len < sizeof(".dta") -1) {
+        fprintf(stderr, "Unknown input format\n");
+        ret = 1;
+        goto cleanup;
+    }
 
-    readstat_parser_free(parser);
+    if (strncmp(filename + len - 4, ".sav", 4) == 0) {
+        error = readstat_parse_sav(parser, argv[1], &ctx);
+    } else if (strncmp(filename + len - 4, ".dta", 4) == 0) {
+        error = readstat_parse_dta(parser, argv[1], &ctx);
+    } else {
+        fprintf(stderr, "Unsupported input format\n");
+        ret = 1;
+        goto cleanup;
+    }
 
     if (error != READSTAT_OK) {
         fprintf(stderr, "Error processing %s: %d\n", argv[1], error);
-        return 1;
+        ret = 1;
+    } else {
+        fprintf(fp, "]}\n");
+        fprintf(fp, "\n");
     }
-    fprintf(fp, "]}\n");
 
-    fprintf(fp, "\n");
+cleanup: readstat_parser_free(parser);
 
     fclose(fp);
-    printf("extract_metadata exiting\n");
     if (ctx.variable_count >=1) {
         for (int i=0; i<ctx.variable_count; i++) {
             readstat_label_set_t * label_set = &ctx.label_set[i];
@@ -262,5 +279,6 @@ int main(int argc, char *argv[]) {
         }
         free(ctx.label_set);
     }
-    return 0;
+    printf("extract_metadata exiting\n");
+    return ret;
 }
