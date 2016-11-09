@@ -50,8 +50,10 @@ char* readstat_sav_date_string(double seconds, char* dest, int size) {
     int day = 1;
     int daysPerMonth[] =     {31,28,31,30,31,30,31,31,30,31,30,31};
     int daysPerMonthLeap[] = {31,29,31,30,31,30,31,31,30,31,30,31};
-    long days = (seconds+24710400) / 86400.0;
-    long mod = ((long)(seconds+24710400)) % 86400;
+    unsigned long secs = seconds;
+    secs += 24710400;
+    unsigned long days = secs / 86400.0;
+    unsigned long mod = secs % 86400;
     if (mod != 0) {
         fprintf(stderr, "%s:%c time is not supported, modulo was %ld\n", __FILE__, __LINE__, mod);
         return NULL;

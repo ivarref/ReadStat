@@ -9,6 +9,7 @@
 #include "produce_csv_column_value.h"
 #include "json_metadata.h"
 #include "../../stata/readstat_dta_days.h"
+#include "../../spss/readstat_sav_date.h"
 
 readstat_value_t value_sysmiss(void *s, size_t len, struct csv_metadata *c) {
     readstat_variable_t *var = &c->variables[c->columns];
@@ -73,6 +74,20 @@ readstat_value_t value_int32(void *s, size_t len, struct csv_metadata *c) {
     return value;
 }
 
+readstat_value_t value_sav_date(void *s, size_t len, struct csv_metadata *c) {
+    char *dest;
+    double val = readstat_sav_date_parse(s, &dest);
+    if (dest == s) {
+        fprintf(stderr, "%s:%c not a valid date: %s\n", __FILE__, __LINE__, s);
+        exit(EXIT_FAILURE);
+    }
+    readstat_value_t value = {
+        .type = READSTAT_TYPE_DOUBLE,
+        .v = { .double_value = val }
+    };
+    return value;
+}
+
 void produce_csv_column_value(void *s, size_t len, void *data) {
     struct csv_metadata *c = (struct csv_metadata *)data;
     readstat_variable_t *var = &c->variables[c->columns];
@@ -81,7 +96,9 @@ void produce_csv_column_value(void *s, size_t len, void *data) {
     readstat_value_t value;
     if (len == 0) {
         value = value_sysmiss(s, len, c);
-    } else if (is_date && var->type == READSTAT_TYPE_INT32 && c->output_format == RS_FORMAT_DTA) {
+    } else if (is_date && c->output_format == RS_FORMAT_SAV) {
+        value = value_sav_date(s, len, c);
+    } else if (is_date && c->output_format == RS_FORMAT_DTA) {
         value = value_int32(s, len, c);
     } else if (var->type == READSTAT_TYPE_STRING) {
         value = value_string(s, len, c);
