@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "../../readstat.h"
+#include "../format.h"
 #include "../module_util.h"
 #include "../module.h"
 #include "produce_csv_column_header.h"
@@ -75,16 +76,17 @@ readstat_value_t value_int32(void *s, size_t len, struct csv_metadata *c) {
 void produce_csv_column_value(void *s, size_t len, void *data) {
     struct csv_metadata *c = (struct csv_metadata *)data;
     readstat_variable_t *var = &c->variables[c->columns];
+    int is_date = c->is_date[c->columns];
     int obs_index = c->rows - 1; // TODO: ???
     readstat_value_t value;
     if (len == 0) {
         value = value_sysmiss(s, len, c);
+    } else if (is_date && var->type == READSTAT_TYPE_INT32 && c->output_format == RS_FORMAT_DTA) {
+        value = value_int32(s, len, c);
     } else if (var->type == READSTAT_TYPE_STRING) {
         value = value_string(s, len, c);
     } else if (var->type == READSTAT_TYPE_DOUBLE) {
         value = value_double(s, len, c);
-    } else if (var->type == READSTAT_TYPE_INT32) {
-        value = value_int32(s, len, c);
     } else {
         fprintf(stderr, "%s:%d unsupported column type: %x\n", __FILE__, __LINE__, var->type);
         exit(EXIT_FAILURE);

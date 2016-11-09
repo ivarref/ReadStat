@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "../../readstat.h"
+#include "../format.h"
 #include "json_metadata.h"
 
 #include "produce_csv_column_value.h"
@@ -153,7 +154,9 @@ void produce_column_header(void *s, size_t len, void *data) {
     readstat_variable_t* var = &c->variables[c->columns];
     memset(var, 0, sizeof(readstat_variable_t));
     
-    readstat_type_t coltype = column_type(c->json_md, column);
+    readstat_type_t coltype = column_type(c->json_md, column, c->output_format);
+    int is_date_column = is_date(c->json_md, column);
+    c->is_date[c->columns] = is_date_column;
     var->type = coltype;
     if (coltype == READSTAT_TYPE_STRING) {
         var->alignment = READSTAT_ALIGNMENT_LEFT;
@@ -161,10 +164,17 @@ void produce_column_header(void *s, size_t len, void *data) {
         var->alignment = READSTAT_ALIGNMENT_RIGHT;
     } else if (coltype == READSTAT_TYPE_INT32) {
         var->alignment = READSTAT_ALIGNMENT_RIGHT;
-        snprintf(var->format, sizeof(var->format)-1, "%s", "%td");
     } else {
         fprintf(stderr, "%s:%d unsupported column type: %x\n", __FILE__, __LINE__, coltype);
         exit(EXIT_FAILURE);
+    }
+
+    if (is_date_column && c->output_format == RS_FORMAT_SAV) {
+        snprintf(var->format, sizeof(var->format)-1, "%s", "EDATE40");
+    } else if (is_date_column && c->output_format == RS_FORMAT_DTA) {
+        snprintf(var->format, sizeof(var->format)-1, "%s", "%td");
+    } else if (is_date_column) {
+        fprintf(stderr, "%s:%d unsupported date column for format %d\n", __FILE__, __LINE__, c->output_format);
     }
 
     if (c->pass == 2 && coltype == READSTAT_TYPE_STRING) {

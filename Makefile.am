@@ -25,6 +25,7 @@ libreadstat_la_SOURCES = \
 	src/spss/readstat_por_read.c \
 	src/spss/readstat_por_write.c \
 	src/spss/readstat_sav.c \
+	src/spss/readstat_sav_date.c \
 	src/spss/readstat_sav_parse.c \
 	src/spss/readstat_sav_parse_timestamp.c \
 	src/spss/readstat_sav_read.c \
@@ -74,6 +75,7 @@ noinst_HEADERS = \
        src/stata/readstat_dta_days.h \
        src/stata/readstat_dta_parse_timestamp.h \
        src/bin/module.h \
+	   src/bin/format.h \
        src/bin/module_util.h \
        src/bin/modules/mod_csv.h \
        src/bin/modules/jsmn.h \
@@ -96,6 +98,7 @@ bin_PROGRAMS = \
 
 readstat_SOURCES = \
 	src/bin/readstat.c \
+	src/bin/format.c \
 	src/bin/module_util.c \
 	src/bin/modules/mod_csv.c \
 	src/bin/modules/jsmn.c \
@@ -127,7 +130,8 @@ endif
 
 check_PROGRAMS = \
 	test_readstat \
-	test_dta_days
+	test_dta_days \
+	test_sav_date
 
 test_readstat_SOURCES = \
 	src/test/test_buffer.c \
@@ -147,7 +151,13 @@ test_dta_days_SOURCES = \
 test_dta_days_LDADD = libreadstat.la
 test_dta_days_CFLAGS = -g -Wall -Werror -pedantic-errors -std=c99
 
-TESTS = test_readstat test_dta_days
+test_sav_date_SOURCES = \
+	src/test/test_sav_date.c
+
+test_sav_date_LDADD = libreadstat.la
+test_sav_date_CFLAGS = -g -Wall -Werror -pedantic-errors -std=c99
+
+TESTS = test_readstat test_dta_days test_sav_date
 
 install-exec-hook:
 	@(cd $(DESTDIR)$(libdir) && $(RM) $(lib_LTLIBRARIES))

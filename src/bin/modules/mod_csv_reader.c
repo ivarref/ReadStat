@@ -19,6 +19,7 @@ void csv_metadata_cell(void *s, size_t len, void *data)
     struct csv_metadata *c = (struct csv_metadata *)data;
     if (c->rows == 0) {
         c->variables = realloc(c->variables, (c->columns+1) * sizeof(readstat_variable_t));
+        c->is_date = realloc(c->is_date, (c->columns+1) * sizeof(int));
         produce_column_header(s, len, data);
     } else if (c->rows >= 1 && c->parser->value_handler) {
         produce_csv_column_value(s, len, data);
@@ -115,6 +116,10 @@ cleanup:
     if (md->variables) {
         free(md->variables);
         md->variables = NULL;
+    }
+    if (md->is_date) {
+        free(md->is_date);
+        md->is_date = NULL;
     }
     if (md->json_md) {
         free_json_metadata(md->json_md);

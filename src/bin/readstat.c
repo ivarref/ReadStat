@@ -20,17 +20,9 @@
 #include "modules/mod_xlsx.h"
 #endif
 
-#define RS_VERSION_STRING  "1.0-prerelease"
+#include "format.h"
 
-#define RS_FORMAT_UNKNOWN       0x00
-#define RS_FORMAT_DTA           0x01
-#define RS_FORMAT_SAV           0x02
-#define RS_FORMAT_POR           0x04
-#define RS_FORMAT_SAS_DATA      0x08
-#define RS_FORMAT_SAS_CATALOG   0x10
-#define RS_FORMAT_XPORT         0x20
-#define RS_FORMAT_CSV           0x40
-#define RS_FORMAT_JSON          0x80
+#define RS_VERSION_STRING  "1.0-prerelease"
 
 #define RS_FORMAT_CAN_WRITE     (RS_FORMAT_DTA | RS_FORMAT_SAV)
 
@@ -40,46 +32,6 @@ typedef struct rs_ctx_s {
     long         row_count;
     long         var_count;
 } rs_ctx_t;
-
-int format(const char *filename) {
-    size_t len = strlen(filename);
-    if (len < sizeof(".dta")-1)
-        return RS_FORMAT_UNKNOWN;
-
-    if (strncmp(filename + len - 4, ".dta", 4) == 0)
-        return RS_FORMAT_DTA;
-
-    if (strncmp(filename + len - 4, ".sav", 4) == 0)
-        return RS_FORMAT_SAV;
-
-    if (strncmp(filename + len - 4, ".por", 4) == 0)
-        return RS_FORMAT_POR;
-
-    #if HAVE_CSVREADER
-    if (strncmp(filename + len - 4, ".csv", 4) == 0)
-        return RS_FORMAT_CSV;
-    #endif
-
-    if (strncmp(filename + len - 4, ".xpt", 4) == 0)
-        return RS_FORMAT_XPORT;
-
-    if (len < sizeof(".json")-1)
-        return RS_FORMAT_UNKNOWN;
-    
-    if (strncmp(filename + len - 5, ".json", 5) == 0)
-        return RS_FORMAT_JSON;
-
-    if (len < sizeof(".sas7bdat")-1)
-        return RS_FORMAT_UNKNOWN;
-
-    if (strncmp(filename + len - 9, ".sas7bdat", 9) == 0)
-        return RS_FORMAT_SAS_DATA;
-
-    if (strncmp(filename + len - 9, ".sas7bcat", 9) == 0)
-        return RS_FORMAT_SAS_CATALOG;
-
-    return RS_FORMAT_UNKNOWN;
-}
 
 const char *format_name(int format) {
     if (format == RS_FORMAT_DTA)
@@ -255,6 +207,7 @@ static int convert_file(const char *input_filename, const char *catalog_filename
     #if HAVE_CSVREADER
     struct csv_metadata csv_meta;
     memset(&csv_meta, 0, sizeof(csv_metadata));
+    csv_meta.output_format = format(output_filename);
     #endif
 
     gettimeofday(&start_time, NULL);
@@ -280,6 +233,7 @@ static int convert_file(const char *input_filename, const char *catalog_filename
     readstat_set_value_label_handler(pass1_parser, &handle_value_label);
     readstat_set_fweight_handler(pass1_parser, &handle_fweight);
     
+    fprintf(stderr, "start pass one\n");
     if (catalog_filename && input_format != RS_FORMAT_CSV) {
         error = parse_file(pass1_parser, catalog_filename, RS_FORMAT_SAS_CATALOG, rs_ctx);
         error_filename = catalog_filename;

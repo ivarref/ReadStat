@@ -10,8 +10,10 @@ typedef struct json_metadata {
 } json_metadata;
 
 struct json_metadata* get_json_metadata(const char* filename);
-readstat_type_t column_type(struct json_metadata* md, char* varname);
+readstat_type_t column_type(struct json_metadata* md, char* varname, int output_format);
 void free_json_metadata(struct json_metadata*);
+
+int is_date(struct json_metadata* md, char* varname);
 
 unsigned char get_separator(struct json_metadata* md);
 int missing_double_idx(struct json_metadata* md, char* varname, double v);

@@ -6,6 +6,7 @@
 #include "jsmn.h"
 #include "json_metadata.h"
 #include "../../readstat.h"
+#include "../format.h"
 
 /* Function realloc_it() is a wrapper function for standart realloc()
  * with one difference - it frees old memory pointer in case of realloc
@@ -169,7 +170,17 @@ int missing_double_idx(struct json_metadata* md, char* varname, double v) {
 	return 0;
 }
 
-readstat_type_t column_type(struct json_metadata* md, char* varname) {
+int is_date(struct json_metadata* md, char* varname) {
+	jsmntok_t* typ = find_variable_property(md->js, md->tok, varname, "type");
+	if (!typ) {
+		fprintf(stderr, "Could not find type of variable %s in metadata\n", varname);
+		exit(EXIT_FAILURE);
+	} else {
+		return match_token(md->js, typ, "DATE");
+	}
+}
+
+readstat_type_t column_type(struct json_metadata* md, char* varname, int output_format) {
 	jsmntok_t* typ = find_variable_property(md->js, md->tok, varname, "type");
 	if (!typ) {
 		fprintf(stderr, "Could not find type of variable %s in metadata\n", varname);
@@ -180,9 +191,10 @@ readstat_type_t column_type(struct json_metadata* md, char* varname) {
 		return READSTAT_TYPE_DOUBLE;
 	} else if (match_token(md->js, typ, "STRING")) {
 		return READSTAT_TYPE_STRING;
-	} else if (match_token(md->js, typ, "DATE")) {
-		// TODO: Consider to add DATE type
+	} else if (match_token(md->js, typ, "DATE") && output_format == RS_FORMAT_DTA) {
 		return READSTAT_TYPE_INT32;
+	} else if (match_token(md->js, typ, "DATE") && output_format == RS_FORMAT_SAV) {
+		return READSTAT_TYPE_DOUBLE;
 	} else {
 		fprintf(stderr, "%s: %d: Unknown metadata type for variable %s\n", __FILE__, __LINE__, varname);
 		exit(EXIT_FAILURE);

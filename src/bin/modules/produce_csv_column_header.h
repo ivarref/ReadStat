@@ -9,11 +9,13 @@ typedef struct csv_metadata {
     long columns;
     long _columns;
     long _rows;
+    int output_format;
     size_t* column_width;
     int open_row;
     readstat_parser_t *parser;
     void *user_ctx;
     readstat_variable_t* variables;
+    int* is_date;
     struct json_metadata* json_md;
 } csv_metadata;
 
