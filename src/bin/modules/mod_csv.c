@@ -8,6 +8,7 @@
 #include "../module_util.h"
 #include "../module.h"
 #include "../../stata/readstat_dta_days.h"
+#include "../../spss/readstat_sav_date.h"
 
 typedef struct mod_csv_ctx_s {
     FILE *out_file;
@@ -106,8 +107,14 @@ static int handle_value(int obs_index, readstat_variable_t *variable, readstat_v
         readstat_dta_days_string(days, days_str, sizeof(days_str)-1);
         fprintf(mod_ctx->out_file, "%s", days_str);
     } else if (type == READSTAT_TYPE_DOUBLE && variable->format && variable->format[0] && 0 == strncmp("EDATE40", variable->format, strlen("EDATE40"))) {
-        fprintf(mod_ctx->out_file, "%s", variable->format);
-        fprintf(mod_ctx->out_file, "%lf", readstat_double_value(value));
+        double v = readstat_double_value(value);
+        char date_str[255];
+        char *s = readstat_sav_date_string(v, date_str, sizeof(date_str)-1);
+        if (!s) {
+            fprintf(stderr, "%s:%d Could not parse SPSS date double: %lf\n", __FILE__, __LINE__, v);
+            exit(EXIT_FAILURE);
+        }
+        fprintf(mod_ctx->out_file, "%s", s);
     } else if (type == READSTAT_TYPE_INT32) {
         fprintf(mod_ctx->out_file, "%d", readstat_int32_value(value));
     } else if (type == READSTAT_TYPE_FLOAT) {
