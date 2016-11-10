@@ -1,8 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
-#include <inttypes.h>
+#include <math.h>
 
 static inline int is_leap(int year) {
     return ((year % 4 == 0 && year % 100 != 0) || year % 400 ==0);
@@ -52,12 +51,12 @@ char* readstat_sav_date_string(double seconds, char* dest, int size) {
     int day = 1;
     int daysPerMonth[] =     {31,28,31,30,31,30,31,31,30,31,30,31};
     int daysPerMonthLeap[] = {31,29,31,30,31,30,31,31,30,31,30,31};
-    uint64_t secs = seconds;
-    secs += 24710400LL;
-    uint64_t days = secs / 86400LL;
-    uint64_t mod = secs % 86400LL;
-    if (mod != 0 || secs < seconds) {
-        fprintf(stderr, "%s:%d time not supported. seconds was %lf secs was %" PRIu64 ". modulo was %" PRIu64 "\n", __FILE__, __LINE__, seconds, secs, mod);
+    double secs = seconds;
+    secs += 24710400.0;
+    double days = secs / 86400.0;
+    double err = ceil(days) - days;
+    if (err != 0.0) {
+        fprintf(stderr, "%s:%d time not supported. seconds was %lf, err was %lf\n", __FILE__, __LINE__, seconds, err);
         return NULL;
     }
 

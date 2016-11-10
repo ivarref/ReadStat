@@ -80,5 +80,11 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    char *s = readstat_sav_date_string(1.0, buf2, sizeof(buf2)-1);
+    if (s!=NULL) {
+        fprintf(stderr, "expected parse failure!\n");
+        exit(EXIT_FAILURE);
+    }
+
     return 0;
 }
