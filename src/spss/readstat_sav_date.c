@@ -55,8 +55,8 @@ char* readstat_sav_date_string(double seconds, char* dest, int size) {
     secs += 24710400LL;
     uint64_t days = secs / 86400LL;
     uint64_t mod = secs % 86400LL;
-    if (mod != 0) {
-        fprintf(stderr, "%s:%d time not supported. seconds was %lf secs was %ld. modulo was %ld\n", __FILE__, __LINE__, seconds, secs, mod);
+    if (mod != 0 || secs < seconds) {
+        fprintf(stderr, "%s:%d time not supported. seconds was %lf secs was %lu. modulo was %lu\n", __FILE__, __LINE__, seconds, secs, mod);
         return NULL;
     }
 
