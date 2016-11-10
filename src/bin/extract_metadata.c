@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include "../spss/readstat_sav_date.h"
+
 typedef struct context {
     int count;
     FILE* fp;
@@ -110,8 +112,11 @@ int handle_variable (int index, readstat_variable_t *variable, const char *val_l
     struct context *ctx = (struct context *)my_ctx;
 
     char* type = "";
+    int spss_date = variable->format && variable->format[0] && (strcmp(variable->format, "EDATE40") == 0) && variable->type == READSTAT_TYPE_DOUBLE;
     if (variable->type == READSTAT_TYPE_STRING) {
         type = "STRING";
+    } else if (spss_date) {
+        type = "DATE";
     } else if (variable->type == READSTAT_TYPE_DOUBLE) {
         type = "NUMERIC";
     } else if (variable->type == READSTAT_TYPE_INT8) {
@@ -195,11 +200,23 @@ int handle_variable (int index, readstat_variable_t *variable, const char *val_l
 
             if (skip) continue;
 
-            if (variable->type == READSTAT_TYPE_DOUBLE && !skip) {
+            if (i>0) {
+                fprintf(ctx->fp, ", ");
+            }
+            
+            if (spss_date) {
                 double v = variable->missingness.missing_ranges[i].v.double_value;
-                if (i>0) {
-                    fprintf(ctx->fp, ", ");
+                char buf[255];
+                char *s = readstat_sav_date_string(v, buf, sizeof(buf)-1);
+                if (!s) {
+                    fprintf(stderr, "Could not parse date %lf\n", v);
+                    exit(EXIT_FAILURE);
+                } else {
+                    fprintf(ctx->fp, "\"%s\"", s);
                 }
+            } else if (variable->type == READSTAT_TYPE_DOUBLE) {
+                double v = variable->missingness.missing_ranges[i].v.double_value;
+               
                 fprintf(ctx->fp, "%g", v);
             } else {
                 fprintf(stderr, "%s:%d Unsupported variable type %d", __FILE__, __LINE__, variable->type);

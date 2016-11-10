@@ -55,7 +55,7 @@ char* readstat_sav_date_string(double seconds, char* dest, int size) {
     unsigned long days = secs / 86400.0;
     unsigned long mod = secs % 86400;
     if (mod != 0) {
-        fprintf(stderr, "%s:%c time is not supported, modulo was %ld\n", __FILE__, __LINE__, mod);
+        fprintf(stderr, "%s:%d time is not supported, modulo was %ld\n", __FILE__, __LINE__, mod);
         return NULL;
     }
 

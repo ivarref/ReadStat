@@ -8,6 +8,7 @@
 #include "produce_csv_column_value.h"
 #include "produce_csv_column_header.h"
 #include "../../stata/readstat_dta_days.h"
+#include "../../spss/readstat_sav_date.h"
 
 char* produce_value_label(char* column, size_t len, struct csv_metadata *c, readstat_type_t coltype) {
     jsmntok_t* categories = find_variable_property(c->json_md->js, c->json_md->tok, column, "categories");
@@ -74,6 +75,29 @@ char* produce_value_label(char* column, size_t len, struct csv_metadata *c, read
     return column;
 }
 
+readstat_value_t get_double_date_missing(const char *js, jsmntok_t* missing_value_token, int idx) {
+    char buf[255];
+    char *dest;
+    int len = missing_value_token->end - missing_value_token->start;
+    snprintf(buf, sizeof(buf)-1, "%.*s", len, js + missing_value_token->start);
+    double val = readstat_sav_date_parse(buf, &dest);
+    if (buf == dest) {
+        fprintf(stderr, "%s:%d failed to parse double: %s\n", __FILE__, __LINE__, buf);
+        exit(EXIT_FAILURE);
+    } else {
+        fprintf(stdout, "added double date missing %s\n", buf);
+    }
+    readstat_value_t value = {
+        .type = READSTAT_TYPE_DOUBLE,
+        .is_system_missing = 0,
+        .is_tagged_missing = 0,
+        .v = {
+            .double_value = val
+        }
+    };
+    return value;
+}
+
 readstat_value_t get_double_missing(const char *js, jsmntok_t* missing_value_token, int idx) {
     char buf[255];
     char *dest;
@@ -119,6 +143,7 @@ readstat_value_t get_int32_missing(const char *js, jsmntok_t* missing_value_toke
 
 void produce_missingness(struct csv_metadata *c, const char* column) {
     readstat_variable_t* var = &c->variables[c->columns];
+    int is_date = c->is_date[c->columns];
     const char *js = c->json_md->js;
     var->missingness.missing_ranges_count = 0;
     
@@ -134,11 +159,14 @@ void produce_missingness(struct csv_metadata *c, const char* column) {
     }
 
     int j = 1;
+    // TODO: It seems that SPSS writer only supports a single value
     for (int i=0; i<values->size; i++) {
         jsmntok_t* missing_value_token = values + j;
-        if (var->type == READSTAT_TYPE_DOUBLE) {
+        if (var->type == READSTAT_TYPE_DOUBLE && is_date) {
+            var->missingness.missing_ranges[var->missingness.missing_ranges_count++] = get_double_date_missing(js, missing_value_token, i);
+        } else if (var->type == READSTAT_TYPE_DOUBLE) {
             var->missingness.missing_ranges[var->missingness.missing_ranges_count++] = get_double_missing(js, missing_value_token, i);
-        } else if (var->type == READSTAT_TYPE_INT32) {
+        } else if (var->type == READSTAT_TYPE_INT32 && is_date) {
             var->missingness.missing_ranges[var->missingness.missing_ranges_count++] = get_int32_missing(js, missing_value_token, i);
         } else {
             fprintf(stderr, "%s:%d Unsupported column type %d\n", __FILE__, __LINE__, var->type);
