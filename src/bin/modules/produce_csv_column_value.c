@@ -78,7 +78,7 @@ readstat_value_t value_sav_date(void *s, size_t len, struct csv_metadata *c) {
     char *dest;
     double val = readstat_sav_date_parse(s, &dest);
     if (dest == s) {
-        fprintf(stderr, "%s:%c not a valid date: %s\n", __FILE__, __LINE__, s);
+        fprintf(stderr, "%s:%d not a valid date: %s\n", __FILE__, __LINE__, (char*)s);
         exit(EXIT_FAILURE);
     }
     readstat_value_t value = {
