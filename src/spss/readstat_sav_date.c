@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 static inline int is_leap(int year) {
     return ((year % 4 == 0 && year % 100 != 0) || year % 400 ==0);
@@ -50,10 +51,10 @@ char* readstat_sav_date_string(double seconds, char* dest, int size) {
     int day = 1;
     int daysPerMonth[] =     {31,28,31,30,31,30,31,31,30,31,30,31};
     int daysPerMonthLeap[] = {31,29,31,30,31,30,31,31,30,31,30,31};
-    unsigned long secs = seconds;
-    secs += 24710400L;
-    unsigned long days = secs / 86400L;
-    unsigned long mod = secs % 86400L;
+    uint64_t secs = seconds;
+    secs += 24710400LL;
+    uint64_t days = secs / 86400LL;
+    uint64_t mod = secs % 86400LL;
     if (mod != 0) {
         fprintf(stderr, "%s:%d time not supported. seconds was %lf secs was %ld. modulo was %ld\n", __FILE__, __LINE__, seconds, secs, mod);
         return NULL;
