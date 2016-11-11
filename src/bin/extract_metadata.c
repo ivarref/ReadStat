@@ -7,6 +7,7 @@
 #include <errno.h>
 
 #include "../spss/readstat_sav_date.h"
+#include "../stata/readstat_dta_days.h"
 #include "format.h"
 
 typedef struct context {
@@ -164,7 +165,8 @@ void add_val_labels(struct context *ctx, readstat_variable_t *variable, const ch
     } else {
         fprintf(stdout, "extracting value labels for %s\n", val_labels);
     }
-    int spss_date = variable->format && variable->format[0] && (strcmp(variable->format, "EDATE40") == 0) && variable->type == READSTAT_TYPE_DOUBLE;
+    int sav_date = variable->format && variable->format[0] && (strcmp(variable->format, "EDATE40") == 0) && variable->type == READSTAT_TYPE_DOUBLE;
+    int dta_date = variable->format && variable->format[0] && (strcmp(variable->format, "%td") == 0) && variable->type == READSTAT_TYPE_INT32;
     readstat_label_set_t * label_set = get_label_set(val_labels, ctx, 0);
     if (!label_set) {
         fprintf(stderr, "Could not find label set %s!\n", val_labels);
@@ -176,7 +178,7 @@ void add_val_labels(struct context *ctx, readstat_variable_t *variable, const ch
         if (i>0) {
             fprintf(ctx->fp, ", ");
         }
-        if (variable->type == READSTAT_TYPE_DOUBLE && spss_date) {
+        if (sav_date) {
             char* lbl = quote_and_escape(value_label->label);
             char buf[255];
             char *s = readstat_sav_date_string(value_label->double_key, buf, sizeof(buf)-1);
@@ -186,9 +188,37 @@ void add_val_labels(struct context *ctx, readstat_variable_t *variable, const ch
             }
             fprintf(ctx->fp, "{ \"code\": \"%s\", \"label\": %s} ", s, lbl);
             free(lbl);
+        } else if (dta_date) {
+            char* lbl = quote_and_escape(value_label->label);
+            char buf[255];
+            int k = value_label->int32_key;
+            char tag = 0;
+            if (k >= 2147483622) {
+                tag = (k-2147483622)+'a';
+            }
+            char *s = readstat_dta_days_string(value_label->int32_key, buf, sizeof(buf)-1);
+            if (!s) {
+                fprintf(stderr, "%s:%d could not parse int32 value %d to date\n", __FILE__, __LINE__, value_label->int32_key);
+                exit(EXIT_FAILURE);
+            }
+            if (tag) {
+                fprintf(ctx->fp, "{ \"code\": \".%c\", \"label\": %s} ", tag, lbl);
+            } else {
+                fprintf(ctx->fp, "{ \"code\": \"%s\", \"label\": %s} ", s, lbl);
+            }
+            free(lbl);
         } else if (variable->type == READSTAT_TYPE_DOUBLE && ctx->input_format == RS_FORMAT_DTA) {
             char* lbl = quote_and_escape(value_label->label);
-            fprintf(ctx->fp, "{ \"code\": %d, \"label\": %s} ", value_label->int32_key, lbl);
+            int k = value_label->int32_key;
+            char tag = 0;
+            if (k >= 2147483622) {
+                tag = (k-2147483622)+'a';
+            }
+            if (tag) {
+                fprintf(ctx->fp, "{ \"code\": \".%c\", \"label\": %s} ", tag, lbl);
+            } else {
+                fprintf(ctx->fp, "{ \"code\": %d, \"label\": %s} ", k, lbl);
+            }
             free(lbl);
         } else if (variable->type == READSTAT_TYPE_DOUBLE && ctx->input_format == RS_FORMAT_SAV) {
             char* lbl = quote_and_escape(value_label->label);
@@ -212,10 +242,15 @@ int handle_variable (int index, readstat_variable_t *variable, const char *val_l
     struct context *ctx = (struct context *)my_ctx;
 
     char* type = "";
-    int spss_date = variable->format && variable->format[0] && (strcmp(variable->format, "EDATE40") == 0) && variable->type == READSTAT_TYPE_DOUBLE;
+    int sav_date = variable->format && variable->format[0] && (strcmp(variable->format, "EDATE40") == 0) && variable->type == READSTAT_TYPE_DOUBLE;
+    int dta_date = variable->format && variable->format[0] && (strcmp(variable->format, "%td") == 0) && variable->type == READSTAT_TYPE_INT32;
+
+    if (variable->format && variable->format[0]) {
+        fprintf(stdout, "format is %s\n", variable->format);
+    }
     if (variable->type == READSTAT_TYPE_STRING) {
         type = "STRING";
-    } else if (spss_date) {
+    } else if (sav_date || dta_date) {
         type = "DATE";
     } else if (variable->type == READSTAT_TYPE_DOUBLE) {
         type = "NUMERIC";
@@ -243,7 +278,16 @@ int handle_variable (int index, readstat_variable_t *variable, const char *val_l
     
     if (ctx->count == 0) {
         ctx->count = 1;
-        fprintf(ctx->fp, "{\"%s\": \"%s\",\n  \"%s\": [\n", "type", "SPSS", "variables");
+        char *typ;
+        if (ctx->input_format == RS_FORMAT_DTA) {
+            typ = "STATA";
+        } else if (ctx->input_format == RS_FORMAT_SAV) {
+            typ = "SPSS";
+        } else {
+            fprintf(stderr, "%s:%d unsupported forma %dt\n", __FILE__, __LINE__, ctx->input_format);
+            exit(EXIT_FAILURE);
+        }
+        fprintf(ctx->fp, "{\"%s\": \"%s\",\n  \"%s\": [\n", "type", typ, "variables");
     } else {
         fprintf(ctx->fp, ",\n");
     }
