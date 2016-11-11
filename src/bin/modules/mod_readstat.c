@@ -181,7 +181,7 @@ static int handle_variable(int index, readstat_variable_t *variable,
     int i;
     for (i=0; i<missing_ranges_count; i++) {
         readstat_value_t lo_val = readstat_variable_get_missing_range_lo(variable, i);
-        readstat_value_t hi_val = readstat_variable_get_missing_range_lo(variable, i);
+        readstat_value_t hi_val = readstat_variable_get_missing_range_hi(variable, i);
         if (readstat_value_type(lo_val) == READSTAT_TYPE_DOUBLE) {
             double lo = readstat_double_value(lo_val);
             double hi = readstat_double_value(hi_val);

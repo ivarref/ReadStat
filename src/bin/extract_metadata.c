@@ -7,11 +7,13 @@
 #include <errno.h>
 
 #include "../spss/readstat_sav_date.h"
+#include "format.h"
 
 typedef struct context {
     int count;
     FILE* fp;
     int variable_count;
+    int input_format;
     readstat_label_set_t *label_set;
 } context;
 
@@ -40,7 +42,8 @@ readstat_label_set_t * get_label_set(const char *val_labels, struct context *ctx
 
 static int handle_value_label(const char *val_labels, readstat_value_t value, const char *label, void *c) {
     struct context *ctx = (struct context*)c;
-    if (value.type == READSTAT_TYPE_DOUBLE || value.type == READSTAT_TYPE_STRING) {
+    // fprintf(stdout, "%s:%d handling value label\n", __FILE__, __LINE__);
+    if (value.type == READSTAT_TYPE_DOUBLE || value.type == READSTAT_TYPE_STRING || value.type == READSTAT_TYPE_INT32) {
         readstat_label_set_t * label_set = get_label_set(val_labels, ctx, 1);
         if (!label_set) {
             return READSTAT_ERROR_MALLOC;
@@ -60,6 +63,11 @@ static int handle_value_label(const char *val_labels, readstat_value_t value, co
             strcpy(string_key, value.v.string_value);
             value_label->string_key = string_key;
             value_label->string_key_len = strlen(value.v.string_value);
+        } else if (value.type == READSTAT_TYPE_INT32) {
+            value_label->int32_key = value.v.i32_value;
+        } else {
+            fprintf(stderr, "%s:%d unsupported type!\n", __FILE__, __LINE__);
+            exit(EXIT_FAILURE);
         }
         char *lbl = malloc(strlen(label) + 1);
         strcpy(lbl, label);
@@ -68,6 +76,7 @@ static int handle_value_label(const char *val_labels, readstat_value_t value, co
         label_set->value_labels_count++;
     } else {
         fprintf(stderr, "%s:%d Unhandled value.type %d\n", __FILE__, __LINE__, value.type);
+        exit(EXIT_FAILURE);
     }
     return READSTAT_OK;
 }
@@ -108,6 +117,97 @@ char* quote_and_escape(const char *src) {
     return dest;
 }
 
+void add_missing_values(struct context *ctx, readstat_variable_t *variable) {
+    int missing_ranges_count = readstat_variable_get_missing_ranges_count(variable);
+    int spss_date = variable->format && variable->format[0] && (strcmp(variable->format, "EDATE40") == 0) && variable->type == READSTAT_TYPE_DOUBLE;
+    if (missing_ranges_count == 0) {
+        return;
+    }
+
+    fprintf(ctx->fp, ", \"missing\": { \"type\": \"DISCRETE\", \"values\": [");
+        
+    for (int i=0; i<missing_ranges_count; i++) {
+        readstat_value_t lo_val = readstat_variable_get_missing_range_lo(variable, i);
+        readstat_value_t hi_val = readstat_variable_get_missing_range_hi(variable, i);
+        if (i>=1) {
+            fprintf(ctx->fp, ", ");
+        }
+
+        if (readstat_value_type(lo_val) == READSTAT_TYPE_DOUBLE) {
+            double lo = readstat_double_value(lo_val);
+            double hi = readstat_double_value(hi_val);
+            if (lo == hi && spss_date) {
+                char buf[255];
+                char *s = readstat_sav_date_string(lo, buf, sizeof(buf)-1);
+                if (!s) {
+                    fprintf(stderr, "Could not parse date %lf\n", lo);
+                    exit(EXIT_FAILURE);
+                }
+                fprintf(ctx->fp, "\"%s\"", s);
+            } else if (lo == hi) {
+                fprintf(ctx->fp, "%g", lo);
+            } else {
+                fprintf(stderr, "%s:%d unsupported lo %lf hi %lf\n", __FILE__, __LINE__, lo, hi);
+                exit(EXIT_FAILURE);
+            }
+        } else {
+            fprintf(stderr, "%s:%d unsupported missing type\n", __FILE__, __LINE__);
+            exit(EXIT_FAILURE);
+        }
+    }
+    fprintf(ctx->fp, "]} ");
+}
+
+void add_val_labels(struct context *ctx, readstat_variable_t *variable, const char *val_labels) {
+    if (!val_labels) {
+        return;
+    } else {
+        fprintf(stdout, "extracting value labels for %s\n", val_labels);
+    }
+    int spss_date = variable->format && variable->format[0] && (strcmp(variable->format, "EDATE40") == 0) && variable->type == READSTAT_TYPE_DOUBLE;
+    readstat_label_set_t * label_set = get_label_set(val_labels, ctx, 0);
+    if (!label_set) {
+        fprintf(stderr, "Could not find label set %s!\n", val_labels);
+        exit(EXIT_FAILURE);
+    }
+    fprintf(ctx->fp, ", \"categories\": [");
+    for (int i=0; i<label_set->value_labels_count; i++) {
+        readstat_value_label_t* value_label = &label_set->value_labels[i];
+        if (i>0) {
+            fprintf(ctx->fp, ", ");
+        }
+        if (variable->type == READSTAT_TYPE_DOUBLE && spss_date) {
+            char* lbl = quote_and_escape(value_label->label);
+            char buf[255];
+            char *s = readstat_sav_date_string(value_label->double_key, buf, sizeof(buf)-1);
+            if (!s) {
+                fprintf(stderr, "%s:%d could not parse double value %lf to date\n", __FILE__, __LINE__, value_label->double_key);
+                exit(EXIT_FAILURE);
+            }
+            fprintf(ctx->fp, "{ \"code\": \"%s\", \"label\": %s} ", s, lbl);
+            free(lbl);
+        } else if (variable->type == READSTAT_TYPE_DOUBLE && ctx->input_format == RS_FORMAT_DTA) {
+            char* lbl = quote_and_escape(value_label->label);
+            fprintf(ctx->fp, "{ \"code\": %d, \"label\": %s} ", value_label->int32_key, lbl);
+            free(lbl);
+        } else if (variable->type == READSTAT_TYPE_DOUBLE && ctx->input_format == RS_FORMAT_SAV) {
+            char* lbl = quote_and_escape(value_label->label);
+            fprintf(ctx->fp, "{ \"code\": %lf, \"label\": %s} ", value_label->double_key, lbl);
+            free(lbl);
+        } else if (variable->type == READSTAT_TYPE_STRING) {
+            char* lbl = quote_and_escape(value_label->label);
+            char* stringkey = quote_and_escape(value_label->string_key);
+            fprintf(ctx->fp, "{ \"code\": %s, \"label\": %s} ", stringkey, lbl);
+            free(lbl);
+            free(stringkey);
+        } else {
+            fprintf(stderr, "%s:%d Unsupported type %d\n", __FILE__, __LINE__, variable->type);
+            exit(EXIT_FAILURE);
+        }
+    }
+    fprintf(ctx->fp, "] ");
+}
+
 int handle_variable (int index, readstat_variable_t *variable, const char *val_labels, void *my_ctx) {
     struct context *ctx = (struct context *)my_ctx;
 
@@ -138,6 +238,8 @@ int handle_variable (int index, readstat_variable_t *variable, const char *val_l
         fprintf(stderr, "unknown type\n");
         exit(EXIT_FAILURE);
     }
+
+    fprintf(stdout, "handling column %s of type %s\n", variable->name, type);
     
     if (ctx->count == 0) {
         ctx->count = 1;
@@ -148,85 +250,96 @@ int handle_variable (int index, readstat_variable_t *variable, const char *val_l
 
     
     fprintf(ctx->fp, "{\"type\": \"%s\", \"name\": \"%s\"", type, variable->name);
-    if (variable->label) {
+    if (variable->label && variable->label[0]) {
         char* lbl = quote_and_escape(variable->label);
         fprintf(ctx->fp, ", \"label\": %s", lbl);
         free(lbl);
     }
 
-    if (val_labels) {
-        readstat_label_set_t * label_set = get_label_set(val_labels, ctx, 0);
-        if (!label_set) {
-            fprintf(stderr, "Could not find label set %s!\n", val_labels);
-            exit(EXIT_FAILURE);
-        }
-        fprintf(ctx->fp, ", \"categories\": [");
-        for (int i=0; i<label_set->value_labels_count; i++) {
-            readstat_value_label_t* value_label = &label_set->value_labels[i];
-            if (i>0) {
-                fprintf(ctx->fp, ", ");
-            }
-            if (variable->type == READSTAT_TYPE_DOUBLE) {
-                char* lbl = quote_and_escape(value_label->label);
-                fprintf(ctx->fp, "{ \"code\": %lf, \"label\": %s} ", value_label->double_key, lbl);
-                free(lbl);
-            } else if (variable->type == READSTAT_TYPE_STRING) {
-                char* lbl = quote_and_escape(value_label->label);
-                char* stringkey = quote_and_escape(value_label->string_key);
-                fprintf(ctx->fp, "{ \"code\": %s, \"label\": %s} ", stringkey, lbl);
-                free(lbl);
-                free(stringkey);
-            } else {
-                fprintf(stderr, "%s:%d Unsupported type %d\n", __FILE__, __LINE__, variable->type);
-                exit(EXIT_FAILURE);
-            }
-            
-            
-        }
-        fprintf(ctx->fp, "] ");
-    }
-
-    if (variable->missingness.missing_ranges_count) {
-        fprintf(ctx->fp, ", \"missing\": { \"type\": \"DISCRETE\", \"values\": [");
-        for (int i=0; i<variable->missingness.missing_ranges_count; i++) {
-            int skip = 0;
-            for (int j=0; j<variable->missingness.missing_ranges_count; j++) {
-                if (j<i && variable->type == READSTAT_TYPE_DOUBLE &&
-                    variable->missingness.missing_ranges[i].v.double_value ==
-                    variable->missingness.missing_ranges[j].v.double_value) {
-                        skip = 1;
-                }
-            }
-
-            if (skip) continue;
-
-            if (i>0) {
-                fprintf(ctx->fp, ", ");
-            }
-            
-            if (spss_date) {
-                double v = variable->missingness.missing_ranges[i].v.double_value;
-                char buf[255];
-                char *s = readstat_sav_date_string(v, buf, sizeof(buf)-1);
-                if (!s) {
-                    fprintf(stderr, "Could not parse date %lf\n", v);
-                    exit(EXIT_FAILURE);
-                } else {
-                    fprintf(ctx->fp, "\"%s\"", s);
-                }
-            } else if (variable->type == READSTAT_TYPE_DOUBLE) {
-                double v = variable->missingness.missing_ranges[i].v.double_value;
-               
-                fprintf(ctx->fp, "%g", v);
-            } else {
-                fprintf(stderr, "%s:%d Unsupported variable type %d", __FILE__, __LINE__, variable->type);
-                exit(EXIT_FAILURE);
-            }
-        }
-        fprintf(ctx->fp, "]}");
-    }
+    add_val_labels(ctx, variable, val_labels);
+    add_missing_values(ctx, variable);
+    
     fprintf(ctx->fp, "}");
     return 0;
+}
+
+int pass(struct context *ctx, char *input, char *output, int pass) {
+    if (pass==2) {
+        FILE* fp = fopen(output, "w");
+        if (fp == NULL) {
+            fprintf(stderr, "Could not open %s for writing: %s\n", output, strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+        ctx->fp = fp;
+    } else {
+        ctx->fp = NULL;
+    }
+
+    int ret = 0;
+
+    readstat_error_t error = READSTAT_OK;
+    readstat_parser_t *parser = readstat_parser_init();
+    if (pass == 1) {
+        readstat_set_value_label_handler(parser, &handle_value_label);
+    } else if (pass == 2) {
+        readstat_set_variable_handler(parser, &handle_variable);
+    }
+    
+    const char *filename = input;
+    size_t len = strlen(filename);
+
+    if (len < sizeof(".dta") -1) {
+        fprintf(stderr, "Unknown input format\n");
+        ret = 1;
+        goto cleanup;
+    }
+
+    if (strncmp(filename + len - 4, ".sav", 4) == 0) {
+        fprintf(stdout, "parsing sav file\n");
+        error = readstat_parse_sav(parser, input, ctx);
+    } else if (strncmp(filename + len - 4, ".dta", 4) == 0) {
+        fprintf(stdout, "parsing dta file\n");
+        error = readstat_parse_dta(parser, input, ctx);
+    } else {
+        fprintf(stderr, "Unsupported input format\n");
+        ret = 1;
+        goto cleanup;
+    }
+
+    if (error != READSTAT_OK) {
+        fprintf(stderr, "Error processing %s: %d\n", input, error);
+        ret = 1;
+    } else {
+        if (ctx->fp) {
+            fprintf(ctx->fp, "]}\n");
+            fprintf(ctx->fp, "\n");
+        }
+    }
+
+cleanup: readstat_parser_free(parser);
+
+    if (ctx->fp) {
+        fclose(ctx->fp);
+    }
+    if (pass==2 && ctx->variable_count >=1) {
+        for (int i=0; i<ctx->variable_count; i++) {
+            readstat_label_set_t * label_set = &ctx->label_set[i];
+            for (int j=0; j<label_set->value_labels_count; j++) {
+                readstat_value_label_t* value_label = &label_set->value_labels[j];
+                if (value_label->string_key) {
+                    free(value_label->string_key);
+                }
+                if (value_label->label) {
+                    free(value_label->label);
+                }
+            }
+            free(label_set->value_labels);
+        }
+        free(ctx->label_set);
+    }
+
+    fprintf(stdout, "pass %d done\n", pass);
+    return ret;
 }
 
 int main(int argc, char *argv[]) {
@@ -237,64 +350,11 @@ int main(int argc, char *argv[]) {
     int ret = 0;
     struct context ctx;
     memset(&ctx, 0, sizeof(struct context));
+    ctx.input_format = format(argv[1]);
 
-    FILE* fp = fopen(argv[2], "w");
-    if (fp == NULL) {
-		fprintf(stderr, "Could not open %s for writing: %s\n", argv[2], strerror(errno));
-        exit(EXIT_FAILURE);
-    }
-    ctx.fp = fp;
-    
-    readstat_error_t error = READSTAT_OK;
-    readstat_parser_t *parser = readstat_parser_init();
-    readstat_set_variable_handler(parser, &handle_variable);
-    readstat_set_value_label_handler(parser, &handle_value_label);
-    
-    const char *filename = argv[1];
-    size_t len = strlen(filename);
-
-    if (len < sizeof(".dta") -1) {
-        fprintf(stderr, "Unknown input format\n");
-        ret = 1;
-        goto cleanup;
-    }
-
-    if (strncmp(filename + len - 4, ".sav", 4) == 0) {
-        error = readstat_parse_sav(parser, argv[1], &ctx);
-    } else if (strncmp(filename + len - 4, ".dta", 4) == 0) {
-        error = readstat_parse_dta(parser, argv[1], &ctx);
-    } else {
-        fprintf(stderr, "Unsupported input format\n");
-        ret = 1;
-        goto cleanup;
-    }
-
-    if (error != READSTAT_OK) {
-        fprintf(stderr, "Error processing %s: %d\n", argv[1], error);
-        ret = 1;
-    } else {
-        fprintf(fp, "]}\n");
-        fprintf(fp, "\n");
-    }
-
-cleanup: readstat_parser_free(parser);
-
-    fclose(fp);
-    if (ctx.variable_count >=1) {
-        for (int i=0; i<ctx.variable_count; i++) {
-            readstat_label_set_t * label_set = &ctx.label_set[i];
-            for (int j=0; j<label_set->value_labels_count; j++) {
-                readstat_value_label_t* value_label = &label_set->value_labels[j];
-                if (value_label->string_key) {
-                    free(value_label->string_key);
-                } 
-                if (value_label->label) {
-                    free(value_label->label);
-                }
-            }
-            free(label_set->value_labels);
-        }
-        free(ctx.label_set);
+    ret = pass(&ctx, argv[1], argv[2], 1);
+    if (!ret) {
+        ret = pass(&ctx, argv[1], argv[2], 2);
     }
     printf("extract_metadata exiting\n");
     return ret;

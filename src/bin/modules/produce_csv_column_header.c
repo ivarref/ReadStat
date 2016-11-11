@@ -10,11 +10,87 @@
 #include "../../stata/readstat_dta_days.h"
 #include "../../spss/readstat_sav_date.h"
 
+void produce_value_label_double_date_sav(char* column, struct csv_metadata *c, char *code, char *label) {
+    char *endptr;
+    double v = readstat_sav_date_parse(code, &endptr);
+    if (endptr == code) {
+        fprintf(stderr, "%s:%d not a valid date: %s\n", __FILE__, __LINE__, code);
+        exit(EXIT_FAILURE);
+    }
+    readstat_value_t value = {
+        .v = { .double_value = v },
+        .type = READSTAT_TYPE_DOUBLE,
+    };
+    c->parser->value_label_handler(column, value, label, c->user_ctx);
+}
+
+void produce_value_label_double_sav(char* column, struct csv_metadata *c, char *code, char *label) {
+    char *endptr;
+    double v = strtod(code, &endptr);
+    if (endptr == code) {
+        fprintf(stderr, "%s:%d not a number: %s\n", __FILE__, __LINE__, code);
+        exit(EXIT_FAILURE);
+    }
+    readstat_value_t value = {
+        .v = { .double_value = v },
+        .type = READSTAT_TYPE_DOUBLE,
+    };
+    c->parser->value_label_handler(column, value, label, c->user_ctx);
+}
+
+void produce_value_label_double_dta(char* column, struct csv_metadata *c, char *code, char *label) {
+    char *endptr;
+    double v = strtod(code, &endptr);
+    if (endptr == code) {
+        fprintf(stderr, "%s:%d not a number: %s\n", __FILE__, __LINE__, code);
+        exit(EXIT_FAILURE);
+    }
+    readstat_value_t value = {
+        .v = { .double_value = v },
+        .type = READSTAT_TYPE_DOUBLE,
+    };
+    int missing_idx = missing_double_idx(c->json_md, column, v);
+    if (missing_idx) {
+        value.is_tagged_missing = 1;
+        value.tag = 'a' + (missing_idx-1);
+    }
+    fprintf(stdout, "adding value label %lf with label %s. missing_idx => %d\n", v, label, missing_idx);
+    c->parser->value_label_handler(column, value, label, c->user_ctx);
+}
+
+void produce_value_label_int32_date_dta(char* column, struct csv_metadata *c, char *code, char *label) {
+    char *dest;
+    int days = readstat_dta_num_days(code, &dest);
+    if (dest == code) {
+        fprintf(stderr, "%s:%d not a valid date: %s\n", __FILE__, __LINE__, code);
+        exit(EXIT_FAILURE);
+    }
+    readstat_value_t value = {
+        .v = { .i32_value = days },
+        .type = READSTAT_TYPE_INT32,
+    };
+    int missing_idx = missing_string_idx(c->json_md, column, code);
+    if (missing_idx) {
+        value.is_tagged_missing = 1;
+        value.tag = 'a' + (missing_idx-1);
+    }
+    c->parser->value_label_handler(column, value, label, c->user_ctx);
+}
+
+void produce_value_label_string(char* column, struct csv_metadata *c, char *code, char *label) {
+    readstat_value_t value = {
+        .v = { .string_value = code },
+        .type = READSTAT_TYPE_STRING,
+    };
+    c->parser->value_label_handler(column, value, label, c->user_ctx);
+}
+
 char* produce_value_label(char* column, size_t len, struct csv_metadata *c, readstat_type_t coltype) {
     jsmntok_t* categories = find_variable_property(c->json_md->js, c->json_md->tok, column, "categories");
     if (categories==NULL) {
         return NULL;
     }
+    int is_date = c->is_date[c->columns];
     int j = 1;
     char code_buf[1024];
     char label_buf[1024];
@@ -23,49 +99,19 @@ char* produce_value_label(char* column, size_t len, struct csv_metadata *c, read
         char* code = get_object_property(c->json_md->js, tok, "code", code_buf, sizeof(code_buf));
         char* label = get_object_property(c->json_md->js, tok, "label", label_buf, sizeof(label_buf));
         if (!code || !label) {
-            fprintf(stderr, "%s:%d bogus JSON metadata input\n", __FILE__, __LINE__);
+            fprintf(stderr, "%s:%d bogus JSON metadata input. Missing code/label for column %s\n", __FILE__, __LINE__, column);
             exit(EXIT_FAILURE);
         }
-        if (coltype == READSTAT_TYPE_DOUBLE) {
-            char * endptr;
-            double v = strtod(code, &endptr);
-            if (endptr == code) {
-                fprintf(stderr, "%s:%d not a number: %s\n", __FILE__, __LINE__, code);
-                exit(EXIT_FAILURE);
-            }
-            readstat_value_t value = {
-                .v = { .double_value = v },
-                .type = READSTAT_TYPE_DOUBLE,
-            };
-            int missing_idx = missing_double_idx(c->json_md, column, v);
-            if (missing_idx) {
-                value.is_tagged_missing = 1;
-                value.tag = 'a' + (missing_idx-1);
-            }
-            c->parser->value_label_handler(column, value, label, c->user_ctx);
-        } else if (coltype == READSTAT_TYPE_INT32) {
-            char *dest;
-            int days = readstat_dta_num_days(code, &dest);
-            if (dest == code) {
-                fprintf(stderr, "%s:%d not a valid date: %s\n", __FILE__, __LINE__, code);
-                exit(EXIT_FAILURE);
-            }
-            readstat_value_t value = {
-                .v = { .i32_value = days },
-                .type = READSTAT_TYPE_INT32,
-            };
-            int missing_idx = missing_string_idx(c->json_md, column, code);
-            if (missing_idx) {
-                value.is_tagged_missing = 1;
-                value.tag = 'a' + (missing_idx-1);
-            }
-            c->parser->value_label_handler(column, value, label, c->user_ctx);
+        if (c->output_format == RS_FORMAT_SAV && coltype == READSTAT_TYPE_DOUBLE && is_date) {
+            produce_value_label_double_date_sav(column, c, code, label);
+        } else if (c->output_format == RS_FORMAT_DTA && coltype == READSTAT_TYPE_INT32 && is_date) {
+            produce_value_label_int32_date_dta(column, c, code, label);
+        } else if (c->output_format == RS_FORMAT_SAV && coltype == READSTAT_TYPE_DOUBLE) {
+            produce_value_label_double_sav(column, c, code, label);
+        } else if (c->output_format == RS_FORMAT_DTA && coltype == READSTAT_TYPE_DOUBLE) {
+            produce_value_label_double_dta(column, c, code, label);
         } else if (coltype == READSTAT_TYPE_STRING) {
-            readstat_value_t value = {
-                .v = { .string_value = code },
-                .type = READSTAT_TYPE_STRING,
-            };
-            c->parser->value_label_handler(column, value, label, c->user_ctx);
+            produce_value_label_string(column, c, code, label);
         } else {
             fprintf(stderr, "%s:%d unsupported column type for value label\n", __FILE__, __LINE__);
             exit(EXIT_FAILURE);
@@ -75,7 +121,8 @@ char* produce_value_label(char* column, size_t len, struct csv_metadata *c, read
     return column;
 }
 
-readstat_value_t get_double_date_missing(const char *js, jsmntok_t* missing_value_token, int idx) {
+double get_double_date_missing_sav(const char *js, jsmntok_t* missing_value_token, int idx) {
+    // SAV missing date
     char buf[255];
     char *dest;
     int len = missing_value_token->end - missing_value_token->start;
@@ -87,48 +134,21 @@ readstat_value_t get_double_date_missing(const char *js, jsmntok_t* missing_valu
     } else {
         fprintf(stdout, "added double date missing %s\n", buf);
     }
-    readstat_value_t value = {
-        .type = READSTAT_TYPE_DOUBLE,
-        .is_system_missing = 0,
-        .is_tagged_missing = 0,
-        .v = {
-            .double_value = val
-        }
-    };
-    return value;
+    return val;
 }
 
-readstat_value_t get_double_missing(const char *js, jsmntok_t* missing_value_token, int idx) {
-    char buf[255];
-    char *dest;
-    int len = missing_value_token->end - missing_value_token->start;
-    snprintf(buf, sizeof(buf)-1, "%.*s", len, js + missing_value_token->start);
-    double val = strtod(buf, &dest);
-    if (buf == dest) {
-        fprintf(stderr, "%s:%d failed to parse double: %s\n", __FILE__, __LINE__, buf);
-        exit(EXIT_FAILURE);
-    }
-    readstat_value_t value = {
-        .type = READSTAT_TYPE_DOUBLE,
-        .is_system_missing = 0,
-        .is_tagged_missing = 1,
-        .tag = 'a' + idx,
-        .v = {
-            .double_value = val
-        }
-    };
-    return value;
-}
-
-readstat_value_t get_int32_missing(const char *js, jsmntok_t* missing_value_token, int idx) {
+readstat_value_t get_int32_date_missing_dta(const char *js, jsmntok_t* missing_value_token, int idx) {
+    // DTA date missing
     char buf[255];
     int len = missing_value_token->end - missing_value_token->start;
     snprintf(buf, sizeof(buf)-1, "%.*s", len, js + missing_value_token->start);
     char* dest;
     int days = readstat_dta_num_days(buf, &dest);
     if (dest == buf) {
-        
+        fprintf(stderr, "%s:%d error parsing date %s\n", __FILE__, __LINE__, buf);
+        exit(EXIT_FAILURE);
     }
+    // return days;
     readstat_value_t value = {
         .type = READSTAT_TYPE_INT32,
         .is_system_missing = 0,
@@ -139,6 +159,19 @@ readstat_value_t get_int32_missing(const char *js, jsmntok_t* missing_value_toke
         }
     };
     return value;
+}
+
+double get_double_missing(const char *js, jsmntok_t* missing_value_token, int idx) {
+    char buf[255];
+    char *dest;
+    int len = missing_value_token->end - missing_value_token->start;
+    snprintf(buf, sizeof(buf)-1, "%.*s", len, js + missing_value_token->start);
+    double val = strtod(buf, &dest);
+    if (buf == dest) {
+        fprintf(stderr, "%s:%d failed to parse double: %s\n", __FILE__, __LINE__, buf);
+        exit(EXIT_FAILURE);
+    }
+    return val;
 }
 
 void produce_missingness(struct csv_metadata *c, const char* column) {
@@ -159,15 +192,17 @@ void produce_missingness(struct csv_metadata *c, const char* column) {
     }
 
     int j = 1;
-    // TODO: It seems that SPSS writer only supports a single value
     for (int i=0; i<values->size; i++) {
         jsmntok_t* missing_value_token = values + j;
-        if (var->type == READSTAT_TYPE_DOUBLE && is_date) {
-            var->missingness.missing_ranges[var->missingness.missing_ranges_count++] = get_double_date_missing(js, missing_value_token, i);
+        if (c->output_format == RS_FORMAT_SAV && var->type == READSTAT_TYPE_DOUBLE && is_date) {
+            readstat_variable_add_missing_double_value(var, get_double_date_missing_sav(js, missing_value_token, i));
+        } else if (c->output_format == RS_FORMAT_DTA && var->type == READSTAT_TYPE_INT32 && is_date) { 
+            // TODO I think this is correct, but would be good to verify
+            // So it seems that STATA does not use the hi-low ranges, and thus we only need to write once
+            readstat_value_t v = get_int32_date_missing_dta(js, missing_value_token, i);
+            var->missingness.missing_ranges[var->missingness.missing_ranges_count++] = v;
         } else if (var->type == READSTAT_TYPE_DOUBLE) {
-            var->missingness.missing_ranges[var->missingness.missing_ranges_count++] = get_double_missing(js, missing_value_token, i);
-        } else if (var->type == READSTAT_TYPE_INT32 && is_date) {
-            var->missingness.missing_ranges[var->missingness.missing_ranges_count++] = get_int32_missing(js, missing_value_token, i);
+            readstat_variable_add_missing_double_value(var, get_double_missing(js, missing_value_token, i));
         } else {
             fprintf(stderr, "%s:%d Unsupported column type %d\n", __FILE__, __LINE__, var->type);
             exit(EXIT_FAILURE);
@@ -188,10 +223,13 @@ void produce_column_header(void *s, size_t len, void *data) {
     var->type = coltype;
     if (coltype == READSTAT_TYPE_STRING) {
         var->alignment = READSTAT_ALIGNMENT_LEFT;
+        fprintf(stdout, "column %s is of type STRING\n", column);
     } else if (coltype == READSTAT_TYPE_DOUBLE) {
         var->alignment = READSTAT_ALIGNMENT_RIGHT;
+        fprintf(stdout, "column %s is of type DOUBLE\n", column);
     } else if (coltype == READSTAT_TYPE_INT32) {
         var->alignment = READSTAT_ALIGNMENT_RIGHT;
+        fprintf(stdout, "column %s is of type INT32\n", column);
     } else {
         fprintf(stderr, "%s:%d unsupported column type: %x\n", __FILE__, __LINE__, coltype);
         exit(EXIT_FAILURE);

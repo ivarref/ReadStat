@@ -108,6 +108,7 @@ readstat_SOURCES = \
 	src/bin/modules/mod_readstat.c
 
 extract_metadata_SOURCES = \
+	src/bin/format.c \
 	src/bin/extract_metadata.c
 
 readstat_LDADD = libreadstat.la
