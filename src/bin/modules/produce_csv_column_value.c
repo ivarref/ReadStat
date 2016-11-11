@@ -75,7 +75,7 @@ readstat_value_t value_double_dta(void *s, size_t len, struct csv_metadata *c) {
 
 readstat_value_t value_double_regular(void *s, size_t len, struct csv_metadata *c) {
     char *dest;
-    readstat_variable_t *var = &c->variables[c->columns];
+    // readstat_variable_t *var = &c->variables[c->columns];
     double val = strtod(s, &dest);
     if (dest == s) {
         fprintf(stderr, "not a number: %s\n", (char*)s);
