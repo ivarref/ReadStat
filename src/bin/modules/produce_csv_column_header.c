@@ -13,9 +13,7 @@ void produce_column_header(void *s, size_t len, void *data) {
     struct csv_metadata *c = (struct csv_metadata *)data;
     char* column = (char*)s;
     readstat_variable_t* var = &c->variables[c->columns];
-    readstat_variable_t* var_internal = &c->var_internal[c->columns];
     memset(var, 0, sizeof(readstat_variable_t));
-    memset(var_internal, 0, sizeof(readstat_variable_t));
     
     readstat_type_t coltype = column_type(c->json_md, column, c->output_format);
     int is_date_column = is_date(c->json_md, column);

@@ -40,7 +40,7 @@ void produce_value_label_double_sav(char* column, struct csv_metadata *c, char *
 }
 
 void produce_value_label_double_dta(char* column, struct csv_metadata *c, char *code, char *label) {
-    readstat_variable_t* var_internal = &c->var_internal[c->columns];
+    readstat_variable_t* variable = &c->variables[c->columns];
     char *endptr;
     double v = strtod(code, &endptr);
     if (endptr == code) {
@@ -51,10 +51,10 @@ void produce_value_label_double_dta(char* column, struct csv_metadata *c, char *
         .v = { .double_value = v },
         .type = READSTAT_TYPE_DOUBLE,
     };
-    int missing_ranges_count = readstat_variable_get_missing_ranges_count(var_internal);
+    int missing_ranges_count = readstat_variable_get_missing_ranges_count(variable);
     for (int i=0; i<missing_ranges_count; i++) {
-        readstat_value_t lo_val = readstat_variable_get_missing_range_lo(var_internal, i);
-        readstat_value_t hi_val = readstat_variable_get_missing_range_hi(var_internal, i);
+        readstat_value_t lo_val = readstat_variable_get_missing_range_lo(variable, i);
+        readstat_value_t hi_val = readstat_variable_get_missing_range_hi(variable, i);
         if (readstat_value_type(lo_val) == READSTAT_TYPE_DOUBLE) {
             double lo = readstat_double_value(lo_val);
             double hi = readstat_double_value(hi_val);

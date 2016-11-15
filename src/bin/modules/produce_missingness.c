@@ -65,7 +65,6 @@ double get_double_missing(const char *js, jsmntok_t* missing_value_token) {
 
 void produce_missingness_discrete(struct csv_metadata *c, jsmntok_t* missing, const char* column) {
     readstat_variable_t* var = &c->variables[c->columns];
-    readstat_variable_t* var_internal = &c->var_internal[c->columns];
     int is_date = c->is_date[c->columns];
     const char *js = c->json_md->js;
 
@@ -80,17 +79,16 @@ void produce_missingness_discrete(struct csv_metadata *c, jsmntok_t* missing, co
         jsmntok_t* missing_value_token = values + j;
         if (c->output_format == RS_FORMAT_SAV && var->type == READSTAT_TYPE_DOUBLE && is_date) {
             readstat_variable_add_missing_double_value(var, get_double_date_missing_sav(js, missing_value_token));
-            readstat_variable_add_missing_double_value(var_internal, get_double_date_missing_sav(js, missing_value_token));
         } else if (c->output_format == RS_FORMAT_DTA && var->type == READSTAT_TYPE_INT32 && is_date) { 
             // TODO I think this is correct, but would be good to verify
             // So it seems that STATA does not use the hi-low ranges, and thus we only need to write once
             readstat_value_t v = get_int32_date_missing_dta(js, missing_value_token, i);
             var->missingness.missing_ranges[var->missingness.missing_ranges_count++] = v;
-            double vv = v.v.i32_value;
-            readstat_variable_add_missing_double_value(var_internal, vv);
+            //double vv = v.v.i32_value;
+            //readstat_variable_add_missing_double_value(var_internal, vv);
         } else if (var->type == READSTAT_TYPE_DOUBLE) {
             readstat_variable_add_missing_double_value(var, get_double_missing(js, missing_value_token));
-            readstat_variable_add_missing_double_value(var_internal, get_double_missing(js, missing_value_token));
+            // readstat_variable_add_missing_double_value(var_internal, get_double_missing(js, missing_value_token));
         } else {
             fprintf(stderr, "%s:%d Unsupported column type %d\n", __FILE__, __LINE__, var->type);
             exit(EXIT_FAILURE);
@@ -119,7 +117,6 @@ char dta_add_missing(readstat_variable_t* var, double v) {
 
 void produce_missingness_range_dta(struct csv_metadata *c, jsmntok_t* missing, const char* column) {
     readstat_variable_t* var = &c->variables[c->columns];
-    readstat_variable_t* var_internal = &c->var_internal[c->columns];
     const char *js = c->json_md->js;
 
     jsmntok_t* low = find_object_property(js, missing, "low");
@@ -161,7 +158,6 @@ void produce_missingness_range_dta(struct csv_metadata *c, jsmntok_t* missing, c
             if (cod >= lo && cod <= hi) {
                 char tag = dta_add_missing(var, cod);
                 printf("%s:%d produce_missingness: Adding missing for code %lf => %c\n", __FILE__, __LINE__, cod, tag);
-                readstat_variable_add_missing_double_range(var_internal, cod, cod);
             }
         }
         if (discrete) {
@@ -169,7 +165,6 @@ void produce_missingness_range_dta(struct csv_metadata *c, jsmntok_t* missing, c
             if (cod == v) {
                 char tag = dta_add_missing(var, cod);
                 printf("%s:%d produce_missingness: Adding missing for code %lf => %c\n", __FILE__, __LINE__, cod, tag);
-                readstat_variable_add_missing_double_range(var_internal, cod, cod);
             }
         }
 
@@ -181,7 +176,6 @@ void produce_missingness_range_dta(struct csv_metadata *c, jsmntok_t* missing, c
 
 void produce_missingness_range_sav(struct csv_metadata *c, jsmntok_t* missing, const char* column) {
     readstat_variable_t* var = &c->variables[c->columns];
-    readstat_variable_t* var_internal = &c->var_internal[c->columns];
     int is_date = c->is_date[c->columns];
     const char *js = c->json_md->js;
 
@@ -202,7 +196,6 @@ void produce_missingness_range_sav(struct csv_metadata *c, jsmntok_t* missing, c
         double lo = is_date ? get_double_date_missing_sav(js, low) : get_double_missing(js, low);
         double hi = is_date ? get_double_date_missing_sav(js, high) :  get_double_missing(js, high);
         readstat_variable_add_missing_double_range(var, lo, hi);
-        readstat_variable_add_missing_double_range(var_internal, lo, hi);
     }
 
     if (discrete) {
@@ -214,9 +207,7 @@ void produce_missingness_range_sav(struct csv_metadata *c, jsmntok_t* missing, c
 void produce_missingness(struct csv_metadata *c, const char* column) {
     const char *js = c->json_md->js;
     readstat_variable_t* var = &c->variables[c->columns];
-    readstat_variable_t* var_internal = &c->var_internal[c->columns];
     var->missingness.missing_ranges_count = 0;
-    var_internal->missingness.missing_ranges_count = 0;
     
     jsmntok_t* missing = find_variable_property(js, c->json_md->tok, column, "missing");
     if (!missing) {

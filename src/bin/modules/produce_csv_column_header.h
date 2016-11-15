@@ -16,7 +16,6 @@ typedef struct csv_metadata {
     void *user_ctx;
     readstat_variable_t* variables;
     int* is_date;
-    readstat_variable_t* var_internal;
     struct json_metadata* json_md;
 } csv_metadata;
 
