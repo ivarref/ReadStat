@@ -201,6 +201,19 @@ readstat_type_t column_type(struct json_metadata* md, char* varname, int output_
 	}
 }
 
+double get_double_from_token(const char *js, jsmntok_t* token) {
+	char buf[255];
+    char *dest;
+    int len = token->end - token->start;
+    snprintf(buf, sizeof(buf)-1, "%.*s", len, js + token->start);
+    double val = strtod(buf, &dest);
+    if (buf == dest) {
+        fprintf(stderr, "%s:%d failed to parse double: %s\n", __FILE__, __LINE__, buf);
+        exit(EXIT_FAILURE);
+    }
+    return val;
+}
+
 struct json_metadata* get_json_metadata(const char* filename) {
     struct json_metadata* result = malloc(sizeof(struct json_metadata));
     if (result == NULL) {

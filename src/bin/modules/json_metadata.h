@@ -25,5 +25,7 @@ jsmntok_t* find_object_property(const char *js, jsmntok_t *t, const char* propna
 char* get_object_property(const char *js, jsmntok_t *t, const char* propname, char* dest, size_t size);
 int match_token(const char *js, jsmntok_t *tok, const char* name);
 
+double get_double_from_token(const char *js, jsmntok_t* token);
+
 #endif /* __JSON_METADATA_H_ */
 
