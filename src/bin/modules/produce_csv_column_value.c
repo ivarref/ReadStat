@@ -46,17 +46,14 @@ readstat_value_t value_double_dta(void *s, size_t len, struct csv_metadata *c) {
         if (readstat_value_type(lo_val) == READSTAT_TYPE_DOUBLE) {
             double lo = readstat_double_value(lo_val);
             double hi = readstat_double_value(hi_val);
-            if (hi != lo) {
-                fprintf(stderr, "%s:%d not supported in STATA\n", __FILE__, __LINE__);
-                exit(EXIT_FAILURE);
-            }
-            if (lo == val && hi==lo) {
+            if (val >= lo && val <= hi) {
                 readstat_value_t value = {
                     .type = READSTAT_TYPE_DOUBLE,
                     .is_tagged_missing = 1,
                     .tag = 'a' + i,
                     .v = { .double_value = val }
                     };
+                fprintf(stderr, "using missing value %lf => tag %c\n", val, value.tag);
                 return value;
             }
         } else {
@@ -151,18 +148,30 @@ void produce_csv_column_value(void *s, size_t len, void *data) {
     readstat_value_t value;
     if (len == 0) {
         value = value_sysmiss(s, len, c);
+    
+    // SAV support
     } else if (c->output_format == RS_FORMAT_SAV && is_date) {
         value = value_double_date_sav(s, len, c);
-    } else if (c->output_format == RS_FORMAT_DTA && is_date) {
-        value = value_int32_date_dta(s, len, c);
-    } else if (var->type == READSTAT_TYPE_STRING) {
-        value = value_string(s, len, c);
-    } else if (c->output_format == RS_FORMAT_DTA && var->type == READSTAT_TYPE_DOUBLE) {
-        value = value_double_dta(s, len, c);
     } else if (c->output_format == RS_FORMAT_SAV && var->type == READSTAT_TYPE_DOUBLE) {
         value = value_double_regular(s, len, c);
+    } else if (c->output_format == RS_FORMAT_SAV && var->type == READSTAT_TYPE_STRING) {
+        value = value_string(s, len, c);
+
+    // DTA support
+    } else if (c->output_format == RS_FORMAT_DTA && is_date) {
+        value = value_int32_date_dta(s, len, c);
+    } else if (c->output_format == RS_FORMAT_DTA && var->type == READSTAT_TYPE_DOUBLE) {
+        value = value_double_dta(s, len, c);
+    } else if (c->output_format == RS_FORMAT_DTA && var->type == READSTAT_TYPE_STRING) {
+        value = value_string(s, len, c);
+    
+    // CSV support
     } else if (c->output_format == RS_FORMAT_CSV && var->type == READSTAT_TYPE_DOUBLE) {
         value = value_double_regular(s, len, c);
+    } else if (c->output_format == RS_FORMAT_CSV && var->type == READSTAT_TYPE_STRING) {
+        value = value_string(s, len, c);
+    
+    // abort
     } else if (var->type == READSTAT_TYPE_INT32) {
         fprintf(stderr, "%s:%d unsupported column type: INT32\n", __FILE__, __LINE__);
         exit(EXIT_FAILURE);
