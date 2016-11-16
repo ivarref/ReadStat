@@ -96,7 +96,6 @@ void produce_missingness_range_dta(struct csv_metadata *c, jsmntok_t* missing, c
         }
 
         double cod = is_date ? get_dta_days_from_token(js, code) : get_double_from_token(js, code);
-        printf("code is %lf\n", cod);
 
         if (low && high) {
             double lo = is_date ? get_dta_days_from_token(js, low) : get_double_from_token(js, low);

@@ -33,7 +33,7 @@ readstat_value_t value_int32_date_dta(const char *s, size_t len, struct csv_meta
                 .tag = 'a' + i,
                 .v = { .i32_value = val }
                 };
-            fprintf(stderr, "using missing value %d => tag %c\n", val, value.tag);
+            // fprintf(stderr, "using missing value %d => tag %c\n", val, value.tag);
             return value;
         }
     }
@@ -70,7 +70,7 @@ readstat_value_t value_double_dta(const char *s, size_t len, struct csv_metadata
                 .tag = 'a' + i,
                 .v = { .double_value = val }
                 };
-            fprintf(stderr, "using missing value %lf => tag %c\n", val, value.tag);
+            // fprintf(stderr, "using missing value %lf => tag %c\n", val, value.tag);
             return value;
         }
     }
