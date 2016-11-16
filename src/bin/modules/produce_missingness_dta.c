@@ -101,15 +101,15 @@ void produce_missingness_range_dta(struct csv_metadata *c, jsmntok_t* missing, c
             double lo = is_date ? get_dta_days_from_token(js, low) : get_double_from_token(js, low);
             double hi = is_date ? get_dta_days_from_token(js, high) : get_double_from_token(js, high);
             if (cod >= lo && cod <= hi) {
-                char tag = is_date ? dta_add_missing_date(var, cod) : dta_add_missing_double(var, cod);
-                printf("%s:%d produce_missingness: Adding missing for code %lf => %c\n", __FILE__, __LINE__, cod, tag);
+                is_date ? dta_add_missing_date(var, cod) : dta_add_missing_double(var, cod);
+                // printf("%s:%d produce_missingness: Adding missing for code %lf => %c\n", __FILE__, __LINE__, cod, tag);
             }
         }
         if (discrete) {
             double v = is_date ? get_dta_days_from_token(js, discrete) : get_double_from_token(js, discrete);
             if (cod == v) {
-                char tag = is_date ? dta_add_missing_date(var, cod) : dta_add_missing_double(var, cod);
-                printf("%s:%d produce_missingness: Adding missing for code %lf => %c\n", __FILE__, __LINE__, cod, tag);
+                is_date ? dta_add_missing_date(var, cod) : dta_add_missing_double(var, cod);
+                // printf("%s:%d produce_missingness: Adding missing for code %lf => %c\n", __FILE__, __LINE__, cod, tag);
             }
         }
         j += slurp_object(tok);
