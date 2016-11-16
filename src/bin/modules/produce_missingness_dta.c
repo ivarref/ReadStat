@@ -26,6 +26,10 @@ double get_dta_days_from_token(const char *js, jsmntok_t* token) {
 char dta_add_missing_date(readstat_variable_t* var, double v) {
     int idx = var->missingness.missing_ranges_count;
     char tagg = 'a' + idx;
+    if (tagg > 'z') {
+        fprintf(stderr, "%s:%d missing tag reached %c, aborting ...\n", __FILE__, __LINE__, tagg);
+        exit(EXIT_FAILURE);
+    }
     readstat_value_t value = {
         .type = READSTAT_TYPE_INT32,
         .is_system_missing = 0,
@@ -44,6 +48,10 @@ char dta_add_missing_date(readstat_variable_t* var, double v) {
 char dta_add_missing_double(readstat_variable_t* var, double v) {
     int idx = var->missingness.missing_ranges_count;
     char tagg = 'a' + idx;
+    if (tagg > 'z') {
+        fprintf(stderr, "%s:%d missing tag reached %c, aborting ...\n", __FILE__, __LINE__, tagg);
+        exit(EXIT_FAILURE);
+    }
     readstat_value_t value = {
         .type = READSTAT_TYPE_DOUBLE,
         .is_system_missing = 0,
