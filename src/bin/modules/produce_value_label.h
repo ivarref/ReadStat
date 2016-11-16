@@ -3,6 +3,6 @@
 
 #include "produce_csv_column_header.h"
 
-char* produce_value_label(char* column, size_t len, struct csv_metadata *c, readstat_type_t coltype);
+void produce_value_label(struct csv_metadata *c, const char* column);
 
 #endif

@@ -6,29 +6,33 @@
 #include "json_metadata.h"
 
 #include "../../stata/readstat_dta_days.h"
-#include "produce_csv_column_value.h"
+#include "produce_csv_value.h"
 #include "produce_csv_column_header.h"
 #include "produce_missingness_dta.h"
 
-char dta_add_int32_date_missing(readstat_variable_t* var, const char *js, jsmntok_t* missing_value_token) {
-    int idx = var->missingness.missing_ranges_count;
-    char tagg = 'a' + idx;
+double get_dta_days_from_token(const char *js, jsmntok_t* token) {
     char buf[255];
-    int len = missing_value_token->end - missing_value_token->start;
-    snprintf(buf, sizeof(buf)-1, "%.*s", len, js + missing_value_token->start);
+    int len = token->end - token->start;
+    snprintf(buf, sizeof(buf)-1, "%.*s", len, js + token->start);
     char* dest;
     int days = readstat_dta_num_days(buf, &dest);
     if (dest == buf) {
         fprintf(stderr, "%s:%d error parsing date %s\n", __FILE__, __LINE__, buf);
         exit(EXIT_FAILURE);
     }
+    return days;
+}
+
+char dta_add_missing_date(readstat_variable_t* var, double v) {
+    int idx = var->missingness.missing_ranges_count;
+    char tagg = 'a' + idx;
     readstat_value_t value = {
         .type = READSTAT_TYPE_INT32,
         .is_system_missing = 0,
         .is_tagged_missing = 1,
         .tag = tagg,
         .v = {
-            .i32_value = days
+            .i32_value = v
         }
     };
     var->missingness.missing_ranges[(idx*2)] = value;
@@ -37,7 +41,7 @@ char dta_add_int32_date_missing(readstat_variable_t* var, const char *js, jsmnto
     return tagg;
 }
 
-char dta_add_missing(readstat_variable_t* var, double v) {
+char dta_add_missing_double(readstat_variable_t* var, double v) {
     int idx = var->missingness.missing_ranges_count;
     char tagg = 'a' + idx;
     readstat_value_t value = {
@@ -58,6 +62,7 @@ char dta_add_missing(readstat_variable_t* var, double v) {
 void produce_missingness_range_dta(struct csv_metadata *c, jsmntok_t* missing, const char* column) {
     readstat_variable_t* var = &c->variables[c->columns];
     const char *js = c->json_md->js;
+    int is_date = c->is_date[c->columns];
 
     jsmntok_t* low = find_object_property(js, missing, "low");
     jsmntok_t* high = find_object_property(js, missing, "high");
@@ -90,20 +95,20 @@ void produce_missingness_range_dta(struct csv_metadata *c, jsmntok_t* missing, c
             exit(EXIT_FAILURE);
         }
 
-        double cod = get_double_from_token(js, code);
+        double cod = is_date ? get_dta_days_from_token(js, code) : get_double_from_token(js, code);
 
         if (low && high) {
-            double lo = get_double_from_token(js, low);
-            double hi = get_double_from_token(js, high);
+            double lo = is_date ? get_dta_days_from_token(js, code) : get_double_from_token(js, code);
+            double hi = is_date ? get_dta_days_from_token(js, code) : get_double_from_token(js, code);
             if (cod >= lo && cod <= hi) {
-                char tag = dta_add_missing(var, cod);
+                char tag = is_date ? dta_add_missing_date(var, cod) : dta_add_missing_double(var, cod);
                 printf("%s:%d produce_missingness: Adding missing for code %lf => %c\n", __FILE__, __LINE__, cod, tag);
             }
         }
         if (discrete) {
-            double v = get_double_from_token(js, discrete);
+            double v = is_date ? get_dta_days_from_token(js, code) : get_double_from_token(js, code);
             if (cod == v) {
-                char tag = dta_add_missing(var, cod);
+                char tag = is_date ? dta_add_missing_date(var, cod) : dta_add_missing_double(var, cod);
                 printf("%s:%d produce_missingness: Adding missing for code %lf => %c\n", __FILE__, __LINE__, cod, tag);
             }
         }
@@ -126,10 +131,10 @@ void produce_missingness_discrete_dta(struct csv_metadata *c, jsmntok_t* missing
     int j = 1;
     for (int i=0; i<values->size; i++) {
         jsmntok_t* missing_value_token = values + j;
-        if (var->type == READSTAT_TYPE_INT32 && is_date) { 
-            dta_add_int32_date_missing(var, js, missing_value_token);
+        if (is_date) { 
+            dta_add_missing_date(var, get_dta_days_from_token(js, missing_value_token));
         } else if (var->type == READSTAT_TYPE_DOUBLE) {
-            readstat_variable_add_missing_double_value(var, get_double_from_token(js, missing_value_token));
+            dta_add_missing_double(var, get_double_from_token(js, missing_value_token));
         } else {
             fprintf(stderr, "%s:%d Unsupported column type %d\n", __FILE__, __LINE__, var->type);
             exit(EXIT_FAILURE);

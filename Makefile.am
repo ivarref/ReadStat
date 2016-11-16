@@ -80,9 +80,14 @@ noinst_HEADERS = \
        src/bin/modules/mod_csv.h \
        src/bin/modules/jsmn.h \
        src/bin/modules/json_metadata.h \
-       src/bin/modules/produce_csv_column_value.h \
+       src/bin/modules/produce_csv_value_dta.h \
+	   src/bin/modules/produce_csv_value_sav.h \
+	   src/bin/modules/produce_csv_value_csv.h \
+	   src/bin/modules/produce_csv_value.h \
        src/bin/modules/produce_csv_column_header.h \
        src/bin/modules/produce_value_label.h \
+	   src/bin/modules/produce_value_label_dta.h \
+	   src/bin/modules/produce_value_label_sav.h \
 	   src/bin/modules/produce_missingness.h \
 	   src/bin/modules/produce_missingness_dta.h \
 	   src/bin/modules/produce_missingness_sav.h \
@@ -107,8 +112,13 @@ readstat_SOURCES = \
 	src/bin/modules/mod_csv.c \
 	src/bin/modules/jsmn.c \
 	src/bin/modules/json_metadata.c \
-	src/bin/modules/produce_csv_column_value.c \
+	src/bin/modules/produce_csv_value_dta.c \
+	src/bin/modules/produce_csv_value_sav.c \
+	src/bin/modules/produce_csv_value_csv.c \
+	src/bin/modules/produce_csv_value.c \
 	src/bin/modules/produce_value_label.c \
+	src/bin/modules/produce_value_label_dta.c \
+	src/bin/modules/produce_value_label_sav.c \
 	src/bin/modules/produce_missingness.c \
 	src/bin/modules/produce_missingness_dta.c \
 	src/bin/modules/produce_missingness_sav.c \

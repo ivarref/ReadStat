@@ -7,7 +7,7 @@
 
 #include "../../readstat.h"
 
-#include "produce_csv_column_value.h"
+#include "produce_csv_value.h"
 #include "produce_csv_column_header.h"
 #include "../../stata/readstat_dta_days.h"
 #include "json_metadata.h"

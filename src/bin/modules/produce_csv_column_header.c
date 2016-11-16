@@ -34,8 +34,11 @@ void produce_column_header(void *s, size_t len, void *data) {
         snprintf(var->format, sizeof(var->format)-1, "%s", "EDATE40");
     } else if (is_date_column && c->output_format == RS_FORMAT_DTA) {
         snprintf(var->format, sizeof(var->format)-1, "%s", "%td");
+    } else if (is_date_column && c->output_format == RS_FORMAT_CSV) {
+        // ignore
     } else if (is_date_column) {
         fprintf(stderr, "%s:%d unsupported date column for format %d\n", __FILE__, __LINE__, c->output_format);
+        exit(EXIT_FAILURE);
     }
 
     if (c->pass == 2 && coltype == READSTAT_TYPE_STRING) {
@@ -48,7 +51,7 @@ void produce_column_header(void *s, size_t len, void *data) {
 
     produce_missingness(c, column);
     if (c->parser->value_label_handler) {
-        produce_value_label(column, len, c, coltype);
+        produce_value_label(c, column);
     }
 
     if (c->parser->variable_handler && c->pass == 2) {

@@ -1,6 +1,8 @@
 #ifndef __PRODUCE_CSV_COLUMN_HEADER_H
 #define __PRODUCE_CSV_COLUMN_HEADER_H
 
+#include "../../readstat.h"
+
 void produce_column_header(void *s, size_t len, void *data);
 
 typedef struct csv_metadata {

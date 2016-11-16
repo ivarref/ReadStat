@@ -3,7 +3,6 @@
 
 #include "../../readstat.h"
 #include "../format.h"
-#include "json_metadata.h"
 
 #include "produce_csv_column_header.h"
 #include "produce_missingness_dta.h"
@@ -11,6 +10,7 @@
 
 void produce_missingness(struct csv_metadata *c, const char* column) {
     if (c->output_format == RS_FORMAT_CSV) {
+        // ignore
     } else if (c->output_format == RS_FORMAT_DTA) {
         produce_missingness_dta(c, column);
     } else if (c->output_format == RS_FORMAT_SAV) {

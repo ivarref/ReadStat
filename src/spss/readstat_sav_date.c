@@ -7,25 +7,25 @@ static inline int is_leap(int year) {
     return ((year % 4 == 0 && year % 100 != 0) || year % 400 ==0);
 }
 
-double readstat_sav_date_parse(char *s, char **dest) {
+double readstat_sav_date_parse(const char *s, char **dest) {
     // A SPSS date stored as the number of seconds since the start of the Gregorian calendar (midnight, Oct 14, 1582)
     // Through the C interface in savReaderWriter I've verifed that leap seconds is ignored
     int daysPerMonth[] =     {31,28,31,30,31,30,31,31,30,31,30,31};
     int daysPerMonthLeap[] = {31,29,31,30,31,30,31,31,30,31,30,31};
     int year, month, day;
     if (strlen(s) == 0) {
-        *dest = s;
+        *dest = (char*) s;
         return 0;
     }
     int ret = sscanf(s, "%d-%d-%d", &year, &month, &day);
     month--;
     if (month < 0 || month > 11 || ret!=3) {
-        *dest = s;
+        *dest = (char*)s;
         return 0;
     }
     int maxdays = (is_leap(year) ? daysPerMonthLeap : daysPerMonth)[month]; 
     if (day < 1 || day > maxdays) {
-        *dest =s;
+        *dest =(char*)s;
         return 0;
     } else {
         int days = 0;
@@ -40,7 +40,7 @@ double readstat_sav_date_parse(char *s, char **dest) {
 
         days += day-1;
         char buf[1024];
-        *dest = s + snprintf(buf, sizeof(buf)-1, "%d-%d-%d", year, month+1, day); 
+        *dest = (char*)s + snprintf(buf, sizeof(buf)-1, "%d-%d-%d", year, month+1, day); 
         return (days * 86400.0) - 24710400; // 24710400 is the number of seconds in 1582 before Oct 14
     }
 }

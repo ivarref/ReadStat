@@ -114,7 +114,7 @@ char* copy_variable_property(struct json_metadata* md, const char* varname, cons
 	return dest;
 }
 
-int missing_string_idx(struct json_metadata* md, char* varname, char* v) {
+int missing_string_idx(struct json_metadata* md, const char* varname, char* v) {
 	jsmntok_t* missing = find_variable_property(md->js, md->tok, varname, "missing");
 	if (!missing) {
 		return 0;
@@ -139,7 +139,7 @@ int missing_string_idx(struct json_metadata* md, char* varname, char* v) {
 	return 0;
 }
 
-int missing_double_idx(struct json_metadata* md, char* varname, double v) {
+int missing_double_idx(struct json_metadata* md, const char* varname, double v) {
 	jsmntok_t* missing = find_variable_property(md->js, md->tok, varname, "missing");
 	if (!missing) {
 		return 0;
@@ -170,17 +170,17 @@ int missing_double_idx(struct json_metadata* md, char* varname, double v) {
 	return 0;
 }
 
-int is_date(struct json_metadata* md, char* varname) {
+int is_date(struct json_metadata* md, const char* varname) {
 	jsmntok_t* typ = find_variable_property(md->js, md->tok, varname, "type");
 	if (!typ) {
-		fprintf(stderr, "Could not find type of variable %s in metadata\n", varname);
+		fprintf(stderr, "%s:%d Could not find type of variable %s in metadata\n", __FILE__, __LINE__, varname);
 		exit(EXIT_FAILURE);
 	} else {
 		return match_token(md->js, typ, "DATE");
 	}
 }
 
-readstat_type_t column_type(struct json_metadata* md, char* varname, int output_format) {
+readstat_type_t column_type(struct json_metadata* md, const char* varname, int output_format) {
 	jsmntok_t* typ = find_variable_property(md->js, md->tok, varname, "type");
 	if (!typ) {
 		fprintf(stderr, "Could not find type of variable %s in metadata\n", varname);
