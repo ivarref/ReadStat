@@ -436,7 +436,7 @@ int pass(struct context *ctx, char *input, char *output, int pass) {
     }
 
     if (error != READSTAT_OK) {
-        fprintf(stderr, "Error processing %s: %d\n", input, error);
+        fprintf(stderr, "Error processing %s: %s (%d)\n", input, readstat_error_message(error), error);
         ret = 1;
     } else {
         if (ctx->fp) {
