@@ -251,7 +251,6 @@ static int convert_file(const char *input_filename, const char *catalog_filename
     if (error != READSTAT_OK)
         goto cleanup;
     
-    fprintf(stderr, "start pass two\n");
     // Pass 2 - Parse full file
     readstat_set_error_handler(pass2_parser, &handle_error);
     readstat_set_info_handler(pass2_parser, &handle_info);
