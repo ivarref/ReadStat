@@ -180,7 +180,7 @@ int is_date(struct json_metadata* md, const char* varname) {
 	}
 }
 
-readstat_type_t column_type(struct json_metadata* md, const char* varname, int output_format) {
+metadata_column_type_t column_type(struct json_metadata* md, const char* varname, int output_format) {
 	jsmntok_t* typ = find_variable_property(md->js, md->tok, varname, "type");
 	if (!typ) {
 		fprintf(stderr, "Could not find type of variable %s in metadata\n", varname);
@@ -188,13 +188,11 @@ readstat_type_t column_type(struct json_metadata* md, const char* varname, int o
 	}
 
 	if (match_token(md->js, typ, "NUMERIC")) {
-		return READSTAT_TYPE_DOUBLE;
+		return METADATA_COLUMN_TYPE_NUMERIC;
 	} else if (match_token(md->js, typ, "STRING")) {
-		return READSTAT_TYPE_STRING;
-	} else if (match_token(md->js, typ, "DATE") && output_format == RS_FORMAT_DTA) {
-		return READSTAT_TYPE_INT32;
-	} else if (match_token(md->js, typ, "DATE") && output_format == RS_FORMAT_SAV) {
-		return READSTAT_TYPE_DOUBLE;
+		return METADATA_COLUMN_TYPE_STRING;
+	} else if (match_token(md->js, typ, "DATE")) {
+		return METADATA_COLUMN_TYPE_DATE;
 	} else {
 		fprintf(stderr, "%s: %d: Unknown metadata type for variable %s\n", __FILE__, __LINE__, varname);
 		exit(EXIT_FAILURE);

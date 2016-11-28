@@ -9,11 +9,17 @@ typedef struct json_metadata {
     jsmntok_t* tok;
 } json_metadata;
 
+typedef enum metadata_column_type_e {
+    METADATA_COLUMN_TYPE_STRING,
+    METADATA_COLUMN_TYPE_NUMERIC,
+    METADATA_COLUMN_TYPE_DATE,
+} metadata_column_type_t;
+
 struct json_metadata* get_json_metadata(const char* filename);
-readstat_type_t column_type(struct json_metadata* md, const char* varname, int output_format);
+metadata_column_type_t column_type(struct json_metadata* md, const char* varname, int output_format);
 void free_json_metadata(struct json_metadata*);
 
-int is_date(struct json_metadata* md, const char* varname);
+// int is_date(struct json_metadata* md, const char* varname);
 
 unsigned char get_separator(struct json_metadata* md);
 int missing_double_idx(struct json_metadata* md, const char* varname, double v);

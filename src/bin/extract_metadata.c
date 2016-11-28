@@ -55,13 +55,37 @@ int handle_variable_sav(int index, readstat_variable_t *variable, const char *va
     char* type = "";
     int has_format = variable->format && variable->format[0];
     int sav_date = has_format && (strcmp(variable->format, "EDATE40") == 0) && variable->type == READSTAT_TYPE_DOUBLE;
-    
+    int decimals = -1;
+
     if (variable->type == READSTAT_TYPE_STRING) {
         type = "STRING";
     } else if (sav_date) {
         type = "DATE";
     } else if (variable->type == READSTAT_TYPE_DOUBLE) {
         type = "NUMERIC";
+        if (has_format && variable->format[0] == 'F') {
+            char* dest = NULL;
+            char* start = &variable->format[1];
+            strtol(start, &dest, 10);
+            if (start == dest) {
+                fprintf(stderr, "%s:%d not a number: %s\n", __FILE__, __LINE__, start);
+                exit(EXIT_FAILURE);
+            }
+            if (dest[0] == '.' && dest[1]) {
+                char* start2 = &dest[1];
+                char* dest2 = NULL;
+                long int d = strtol(start2, &dest2, 10);
+                if (start2 == dest2) {
+                    fprintf(stderr, "%s:%d not a number: %s\n", __FILE__, __LINE__, start2);
+                    exit(EXIT_FAILURE);
+                }
+                if (d < 0 || d > 16) {
+                    fprintf(stderr, "%s:%d decimals was %ld, expected to be [0, 16]\n", __FILE__, __LINE__, d);
+                    exit(EXIT_FAILURE);
+                }
+                decimals = (int)d;
+            }
+        }
     } else {
         fprintf(stderr, "%s:%d unhandled type %s\n", __FILE__, __LINE__, readstat_type_str(variable->type));
         exit(EXIT_FAILURE);
@@ -75,6 +99,9 @@ int handle_variable_sav(int index, readstat_variable_t *variable, const char *va
     }
 
     fprintf(ctx->fp, "{\"type\": \"%s\", \"name\": \"%s\"", type, variable->name);
+    if (decimals > 0) {
+        fprintf(ctx->fp, ", \"decimals\": %d", decimals);
+    }
     if (variable->label && variable->label[0]) {
         char* lbl = quote_and_escape(variable->label);
         fprintf(ctx->fp, ", \"label\": %s", lbl);
