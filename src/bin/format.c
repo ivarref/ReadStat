@@ -1,6 +1,39 @@
 #include <string.h>
 
 #include "format.h"
+#include "../readstat.h"
+
+const char* readstat_type_str(readstat_type_t type) {
+    if (type == READSTAT_TYPE_STRING) {
+        return "READSTAT_TYPE_STRING";
+    }
+    
+    if (type == READSTAT_TYPE_INT8) {
+        return "READSTAT_TYPE_INT8";
+    }
+
+    if (type == READSTAT_TYPE_INT16) {
+        return "READSTAT_TYPE_INT16";
+    }
+
+    if (type == READSTAT_TYPE_INT32) {
+        return "READSTAT_TYPE_INT32";
+    }
+
+    if (type == READSTAT_TYPE_FLOAT) {
+        return "READSTAT_TYPE_FLOAT";
+    }
+
+    if (type == READSTAT_TYPE_DOUBLE) {
+        return "READSTAT_TYPE_DOUBLE";
+    }
+
+    if (type == READSTAT_TYPE_STRING_REF) {
+        return "READSTAT_TYPE_STRING_REF";
+    }
+
+    return "UNKNOWN TYPE";
+} 
 
 int format(const char *filename) {
     size_t len = strlen(filename);

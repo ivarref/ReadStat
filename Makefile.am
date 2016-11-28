@@ -76,6 +76,10 @@ noinst_HEADERS = \
        src/stata/readstat_dta_parse_timestamp.h \
        src/bin/module.h \
 	   src/bin/format.h \
+	   src/bin/extract_metadata.h \
+	   src/bin/extract_label_set.h \
+	   src/bin/write_missing_values.h \
+	   src/bin/write_value_labels.h \
        src/bin/module_util.h \
        src/bin/modules/mod_csv.h \
        src/bin/modules/jsmn.h \
@@ -127,6 +131,9 @@ readstat_SOURCES = \
 
 extract_metadata_SOURCES = \
 	src/bin/format.c \
+	src/bin/extract_label_set.c \
+	src/bin/write_missing_values.c \
+	src/bin/write_value_labels.c \
 	src/bin/extract_metadata.c
 
 readstat_LDADD = libreadstat.la

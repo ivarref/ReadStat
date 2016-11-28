@@ -13,4 +13,8 @@
 
 int format(const char *filename);
 
+#include "../readstat.h"
+
+const char* readstat_type_str(readstat_type_t type);
+
 #endif
