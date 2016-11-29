@@ -26,9 +26,8 @@ void produce_column_header_dta(char *column, readstat_variable_t* var, struct cs
         snprintf(var->format, sizeof(var->format)-1, "%s", "%td");
         var->type = READSTAT_TYPE_INT32;
     } else if (coltype == METADATA_COLUMN_TYPE_NUMERIC) {
-        int decimals = 0;
         var->type = READSTAT_TYPE_DOUBLE;
-        snprintf(var->format, sizeof(var->format)-1, "%%10.%dg", decimals);
+        snprintf(var->format, sizeof(var->format)-1, "%%9.%df", get_decimals(c->json_md, column));
     } else if (coltype == METADATA_COLUMN_TYPE_STRING) {
         var->type = READSTAT_TYPE_STRING;
     }
@@ -41,8 +40,7 @@ void produce_column_header_sav(char *column, readstat_variable_t* var, struct cs
         snprintf(var->format, sizeof(var->format)-1, "%s", "EDATE40");
     } else if (coltype == METADATA_COLUMN_TYPE_NUMERIC) {
         var->type = READSTAT_TYPE_DOUBLE;
-        int decimals = 0;
-        snprintf(var->format, sizeof(var->format)-1, "F8.%d", decimals);
+        snprintf(var->format, sizeof(var->format)-1, "F8.%d", get_decimals(c->json_md, column));
     } else if (coltype == METADATA_COLUMN_TYPE_STRING) {
         var->type = READSTAT_TYPE_STRING;
     }

@@ -19,7 +19,7 @@ struct json_metadata* get_json_metadata(const char* filename);
 metadata_column_type_t column_type(struct json_metadata* md, const char* varname, int output_format);
 void free_json_metadata(struct json_metadata*);
 
-// int is_date(struct json_metadata* md, const char* varname);
+int get_decimals(struct json_metadata* md, const char* varname);
 
 unsigned char get_separator(struct json_metadata* md);
 int missing_double_idx(struct json_metadata* md, const char* varname, double v);

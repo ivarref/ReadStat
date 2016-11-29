@@ -50,7 +50,9 @@
                     ]
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
                 },
                 "label": {
                     "type": "string",
@@ -85,7 +87,7 @@
                     "type": "object",
                     "oneOf": [
                         {
-                            "$ref": "#/definitions/SPSS-RANGE"
+                            "$ref": "#/definitions/NUMERIC-RANGE"
                         },
                         {
                             "$ref": "#/definitions/SPSS-NUMERIC-DISCRETE"
@@ -107,7 +109,9 @@
                     ]
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
                 },
                 "label": {
                     "type": "string",
@@ -156,7 +160,9 @@
                     ]
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
                 },
                 "label": {
                     "type": "string",
@@ -190,7 +196,7 @@
                             "$ref": "#/definitions/SPSS-DATE-DISCRETE"
                         },
                         {
-                            "$ref": "#/definitions/SPSS-DATE-RANGE"
+                            "$ref": "#/definitions/DATE-RANGE"
                         }
                     ]
                 }
@@ -273,7 +279,7 @@
                 "values"
             ]
         },
-        "SPSS-RANGE": {
+        "NUMERIC-RANGE": {
             "type": "object",
             "properties": {
                 "type": {
@@ -298,7 +304,7 @@
             ],
             "additionalProperties": false
         },
-        "SPSS-DATE-RANGE": {
+        "DATE-RANGE": {
             "type": "object",
             "properties": {
                 "type": {
@@ -367,12 +373,19 @@
                     ]
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 32
                 },
                 "label": {
                     "type": "string",
                     "minLength": 0,
                     "maxLength": 255
+                },
+                "decimals": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 16
                 },
                 "categories": {
                     "type": "array",
@@ -398,6 +411,9 @@
                     "oneOf": [
                         {
                             "$ref": "#/definitions/STATA-NUMERIC-DISCRETE"
+                        },
+                        {
+                            "$ref": "#/definitions/NUMERIC-RANGE"
                         }
                     ]
                 }
@@ -440,7 +456,9 @@
                     ]
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 32
                 },
                 "label": {
                     "type": "string",
@@ -472,6 +490,9 @@
                     "oneOf": [
                         {
                             "$ref": "#/definitions/STATA-DATE-DISCRETE"
+                        },
+                        {
+                            "$ref": "#/definitions/DATE-RANGE"
                         }
                     ]
                 }
@@ -514,7 +535,9 @@
                     ]
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 32
                 },
                 "label": {
                     "type": "string",

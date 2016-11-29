@@ -170,13 +170,19 @@ int missing_double_idx(struct json_metadata* md, const char* varname, double v) 
 	return 0;
 }
 
-int is_date(struct json_metadata* md, const char* varname) {
-	jsmntok_t* typ = find_variable_property(md->js, md->tok, varname, "type");
-	if (!typ) {
-		fprintf(stderr, "%s:%d Could not find type of variable %s in metadata\n", __FILE__, __LINE__, varname);
-		exit(EXIT_FAILURE);
+int get_decimals(struct json_metadata* md, const char* varname) {
+	jsmntok_t* decimals_tok = find_variable_property(md->js, md->tok, varname, "decimals");
+	if (!decimals_tok) {
+		return 0;
 	} else {
-		return match_token(md->js, typ, "DATE");
+		char *dest;
+		char *buf = md->js + decimals_tok->start;
+		long int decimals = strtol(buf, &dest, 10);
+		if (dest == buf) {
+			fprintf(stderr, "%s:%d not a number: %.*s\n", __FILE__, __LINE__, decimals_tok->end-decimals_tok->start, buf);
+			exit(EXIT_FAILURE);
+		}
+		return decimals;
 	}
 }
 
