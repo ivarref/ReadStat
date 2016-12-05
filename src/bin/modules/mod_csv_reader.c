@@ -38,7 +38,10 @@ void csv_metadata_row(int cc, void *data)
     struct csv_metadata *c = (struct csv_metadata *)data;
     c->rows++;
     if (c->rows == 1 && c->pass == 1) {
-        c->column_width = calloc(c->columns, sizeof(size_t));
+        c->column_width = malloc(c->columns * sizeof(size_t));
+        for (int i=0; i<c->columns; i++) {
+            c->column_width[i] = 1;
+        }
         c->_columns = c->columns;
     }
     c->columns = 0;
