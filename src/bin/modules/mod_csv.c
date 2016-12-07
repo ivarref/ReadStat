@@ -9,6 +9,7 @@
 #include "../module.h"
 #include "../../stata/readstat_dta_days.h"
 #include "../../spss/readstat_sav_date.h"
+#include "double_decimals.h"
 
 typedef struct mod_csv_ctx_s {
     FILE *out_file;
@@ -120,7 +121,13 @@ static int handle_value(int obs_index, readstat_variable_t *variable, readstat_v
     } else if (type == READSTAT_TYPE_FLOAT) {
         fprintf(mod_ctx->out_file, "%f", readstat_float_value(value));
     } else if (type == READSTAT_TYPE_DOUBLE) {
-        fprintf(mod_ctx->out_file, "%lf", readstat_double_value(value));
+        double v = readstat_double_value(value);
+        int decimals = double_decimals(v);
+        if (decimals <= 6) {
+            fprintf(mod_ctx->out_file, "%lf", v);
+        } else {
+            fprintf(mod_ctx->out_file, "%.14f", v);
+        }
     }
     if (var_index == mod_ctx->var_count - 1) {
         fprintf(mod_ctx->out_file, "\n");

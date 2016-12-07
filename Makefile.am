@@ -81,6 +81,7 @@ noinst_HEADERS = \
 	   src/bin/write_missing_values.h \
 	   src/bin/write_value_labels.h \
        src/bin/module_util.h \
+	   src/bin/modules/double_decimals.h \
        src/bin/modules/mod_csv.h \
        src/bin/modules/jsmn.h \
        src/bin/modules/json_metadata.h \
@@ -113,6 +114,7 @@ readstat_SOURCES = \
 	src/bin/readstat.c \
 	src/bin/format.c \
 	src/bin/module_util.c \
+	src/bin/modules/double_decimals.c \
 	src/bin/modules/mod_csv.c \
 	src/bin/modules/jsmn.c \
 	src/bin/modules/json_metadata.c \
@@ -157,7 +159,8 @@ endif
 check_PROGRAMS = \
 	test_readstat \
 	test_dta_days \
-	test_sav_date
+	test_sav_date \
+	test_double_decimals
 
 test_readstat_SOURCES = \
 	src/test/test_buffer.c \
@@ -183,7 +186,14 @@ test_sav_date_SOURCES = \
 test_sav_date_LDADD = libreadstat.la
 test_sav_date_CFLAGS = -g -Wall -Werror -pedantic-errors -std=c99
 
-TESTS = test_readstat test_dta_days test_sav_date
+test_double_decimals_SOURCES = \
+	src/bin/modules/double_decimals.c \
+	src/test/test_double_decimals.c
+
+test_double_decimals_CFLAGS = -g -Wall -Werror -pedantic-errors -std=c99
+
+
+TESTS = test_readstat test_dta_days test_sav_date test_double_decimals
 
 install-exec-hook:
 	@(cd $(DESTDIR)$(libdir) && $(RM) $(lib_LTLIBRARIES))
