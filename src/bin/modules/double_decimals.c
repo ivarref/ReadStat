@@ -19,10 +19,6 @@ int double_decimals(double value) {
         }
     }
 
-    if (!dot_pos) {
-        return 0;
-    }
-
     int relevant_decimals = relevant_decimal_pos - dot_pos;
 
     return relevant_decimals;
