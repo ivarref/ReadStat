@@ -64,7 +64,7 @@ void produce_missingness_discrete_sav(struct csv_metadata *c, jsmntok_t* missing
         } else if (var->type == READSTAT_TYPE_DOUBLE) {
             readstat_variable_add_missing_double_value(var, get_double_from_token(js, missing_value_token));
         } else if (var->type == READSTAT_TYPE_STRING) {
-            fprintf(stderr, "%s:%d Pass %d Warning: Ignoring missing discrete string value '%.*s' for column '%s'\n", __FILE__, __LINE__, c->pass, missing_value_token->end - missing_value_token->start, js + missing_value_token->start, column);
+            // fprintf(stderr, "%s:%d Pass %d Warning: Ignoring missing discrete string value '%.*s' for column '%s'\n", __FILE__, __LINE__, c->pass, missing_value_token->end - missing_value_token->start, js + missing_value_token->start, column);
         } else {
             fprintf(stderr, "%s:%d Unsupported column type %d\n", __FILE__, __LINE__, var->type);
             exit(EXIT_FAILURE);
