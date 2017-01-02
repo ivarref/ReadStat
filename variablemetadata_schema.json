@@ -543,11 +543,62 @@
                     "type": "string",
                     "minLength": 0,
                     "maxLength": 255
+                },
+                 "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "code": {
+                                "type": "string"
+                            },
+                            "label": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "code",
+                            "label"
+                        ],
+                        "additionalProperties": false
+                    }
+                },
+                "missing": {
+                    "type": "object",
+                    "oneOf": [
+                        {
+                            "$ref": "#/definitions/STATA-STRING-DISCRETE"
+                        }
+                    ]
                 }
             },
             "required": [
                 "type",
                 "name"
+            ],
+            "additionalProperties": false
+        },
+        "STATA-STRING-DISCRETE": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "enum": [
+                        "DISCRETE"
+                    ]
+                },
+                "values": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 3,
+                    "uniqueItems": true
+                }
+            },
+            "required": [
+                "type",
+                "values"
             ],
             "additionalProperties": false
         }
