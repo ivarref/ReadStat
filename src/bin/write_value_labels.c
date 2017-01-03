@@ -8,6 +8,8 @@
 
 #include "../spss/readstat_sav_date.h"
 #include "../stata/readstat_dta_days.h"
+#include "../readstat_iconv.h"
+#include "../stata/readstat_dta.h"
 
 #include "format.h"
 #include "extract_label_set.h"
@@ -48,8 +50,8 @@ void add_val_labels(struct context *ctx, readstat_variable_t *variable, const ch
             char buf[255];
             int k = value_label->int32_key;
             char tag = 0;
-            if (k >= 2147483622) {
-                tag = (k-2147483622)+'a';
+            if (k >= DTA_113_MISSING_INT32_A) {
+                tag = (k-DTA_113_MISSING_INT32_A)+'a';
             }
             char *s = readstat_dta_days_string(value_label->int32_key, buf, sizeof(buf)-1);
             if (!s) {
@@ -66,8 +68,8 @@ void add_val_labels(struct context *ctx, readstat_variable_t *variable, const ch
             char* lbl = quote_and_escape(value_label->label);
             int k = value_label->int32_key;
             char tag = 0;
-            if (k >= 2147483622) {
-                tag = (k-2147483622)+'a';
+            if (k >= DTA_113_MISSING_INT32_A) {
+                tag = (k-DTA_113_MISSING_INT32_A)+'a';
             }
             if (tag) {
                 fprintf(ctx->fp, "{ \"code\": \".%c\", \"label\": %s} ", tag, lbl);
