@@ -75,27 +75,27 @@ noinst_HEADERS = \
        src/stata/readstat_dta_days.h \
        src/stata/readstat_dta_parse_timestamp.h \
        src/bin/module.h \
-	   src/bin/format.h \
-	   src/bin/extract_metadata.h \
-	   src/bin/extract_label_set.h \
-	   src/bin/write_missing_values.h \
-	   src/bin/write_value_labels.h \
+       src/bin/format.h \
+       src/bin/extract_metadata.h \
+       src/bin/extract_label_set.h \
+       src/bin/write_missing_values.h \
+       src/bin/write_value_labels.h \
        src/bin/module_util.h \
-	   src/bin/modules/double_decimals.h \
+       src/bin/modules/double_decimals.h \
        src/bin/modules/mod_csv.h \
        src/bin/modules/jsmn.h \
        src/bin/modules/json_metadata.h \
        src/bin/modules/produce_csv_value_dta.h \
-	   src/bin/modules/produce_csv_value_sav.h \
-	   src/bin/modules/produce_csv_value_csv.h \
-	   src/bin/modules/produce_csv_value.h \
+       src/bin/modules/produce_csv_value_sav.h \
+       src/bin/modules/produce_csv_value_csv.h \
+       src/bin/modules/produce_csv_value.h \
        src/bin/modules/produce_csv_column_header.h \
        src/bin/modules/produce_value_label.h \
-	   src/bin/modules/produce_value_label_dta.h \
-	   src/bin/modules/produce_value_label_sav.h \
-	   src/bin/modules/produce_missingness.h \
-	   src/bin/modules/produce_missingness_dta.h \
-	   src/bin/modules/produce_missingness_sav.h \
+       src/bin/modules/produce_value_label_dta.h \
+       src/bin/modules/produce_value_label_sav.h \
+       src/bin/modules/produce_missingness.h \
+       src/bin/modules/produce_missingness_dta.h \
+       src/bin/modules/produce_missingness_sav.h \
        src/bin/modules/mod_readstat.h \
        src/bin/modules/mod_xlsx.h \
        src/test/test_buffer.h \
