@@ -3,7 +3,7 @@
 
 int double_decimals(double value) {
     char buf[255];
-    snprintf(buf, sizeof(buf)-1, "%.14f", value);
+    snprintf(buf, sizeof(buf), "%.14f", value);
 
     int len = strlen(buf);
 

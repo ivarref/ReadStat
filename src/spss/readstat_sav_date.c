@@ -40,7 +40,7 @@ double readstat_sav_date_parse(const char *s, char **dest) {
 
         days += day-1;
         char buf[1024];
-        *dest = (char*)s + snprintf(buf, sizeof(buf)-1, "%d-%d-%d", year, month+1, day); 
+        *dest = (char*)s + snprintf(buf, sizeof(buf), "%d-%d-%d", year, month+1, day); 
         return (days * 86400.0) - 24710400; // 24710400 is the number of seconds in 1582 before Oct 14
     }
 }

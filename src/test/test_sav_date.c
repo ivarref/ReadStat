@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
             int start_day = (year==1582 && month==10-1) ? 14 : 1;
             int max_days = is_leap(year) ? daysPerMonthLeap[month] : daysPerMonth[month];
             for (int day=start_day; day<=max_days; day++) {
-                snprintf(buf, sizeof(buf)-1, "%04d-%02d-%02d", year, month+1, day);
+                snprintf(buf, sizeof(buf), "%04d-%02d-%02d", year, month+1, day);
                 double v = readstat_sav_date_parse(buf, &dest);
                 if (buf == dest) {
                     fprintf(stderr, "parse error\n");

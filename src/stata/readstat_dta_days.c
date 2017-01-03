@@ -41,7 +41,7 @@ int readstat_dta_num_days(const char *s, char **dest) {
 
         days += day-1;
         char buf[1024];
-        *dest = (char*)s + snprintf(buf, sizeof(buf)-1, "%d-%d-%d", year, month+1, day); 
+        *dest = (char*)s + snprintf(buf, sizeof(buf), "%d-%d-%d", year, month+1, day); 
         return days;
     }
 }

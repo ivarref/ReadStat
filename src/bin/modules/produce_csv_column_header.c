@@ -23,11 +23,11 @@ void produce_column_header_csv(char *column, readstat_variable_t* var, struct cs
 void produce_column_header_dta(char *column, readstat_variable_t* var, struct csv_metadata *c) {
     metadata_column_type_t coltype = column_type(c->json_md, column, c->output_format);
     if (coltype == METADATA_COLUMN_TYPE_DATE) {
-        snprintf(var->format, sizeof(var->format)-1, "%s", "%td");
+        snprintf(var->format, sizeof(var->format), "%s", "%td");
         var->type = READSTAT_TYPE_INT32;
     } else if (coltype == METADATA_COLUMN_TYPE_NUMERIC) {
         var->type = READSTAT_TYPE_DOUBLE;
-        snprintf(var->format, sizeof(var->format)-1, "%%9.%df", get_decimals(c->json_md, column));
+        snprintf(var->format, sizeof(var->format), "%%9.%df", get_decimals(c->json_md, column));
     } else if (coltype == METADATA_COLUMN_TYPE_STRING) {
         var->type = READSTAT_TYPE_STRING;
     }
@@ -37,10 +37,10 @@ void produce_column_header_sav(char *column, readstat_variable_t* var, struct cs
     metadata_column_type_t coltype = column_type(c->json_md, column, c->output_format);
     if (coltype == METADATA_COLUMN_TYPE_DATE) {
         var->type = READSTAT_TYPE_DOUBLE;
-        snprintf(var->format, sizeof(var->format)-1, "%s", "EDATE40");
+        snprintf(var->format, sizeof(var->format), "%s", "EDATE40");
     } else if (coltype == METADATA_COLUMN_TYPE_NUMERIC) {
         var->type = READSTAT_TYPE_DOUBLE;
-        snprintf(var->format, sizeof(var->format)-1, "F8.%d", get_decimals(c->json_md, column));
+        snprintf(var->format, sizeof(var->format), "F8.%d", get_decimals(c->json_md, column));
     } else if (coltype == METADATA_COLUMN_TYPE_STRING) {
         var->type = READSTAT_TYPE_STRING;
     }
@@ -78,7 +78,7 @@ void produce_column_header(void *s, size_t len, void *data) {
     
     var->index = c->columns;
     copy_variable_property(c->json_md, column, "label", var->label, sizeof(var->label));
-    snprintf(var->name, sizeof(var->name)-1, "%.*s", (int)len, column);
+    snprintf(var->name, sizeof(var->name), "%.*s", (int)len, column);
 
     produce_missingness(c, column);
     if (c->parser->value_label_handler) {

@@ -15,7 +15,7 @@ double get_double_date_missing_sav(const char *js, jsmntok_t* missing_value_toke
     char buf[255];
     char *dest;
     int len = missing_value_token->end - missing_value_token->start;
-    snprintf(buf, sizeof(buf)-1, "%.*s", len, js + missing_value_token->start);
+    snprintf(buf, sizeof(buf), "%.*s", len, js + missing_value_token->start);
     double val = readstat_sav_date_parse(buf, &dest);
     if (buf == dest) {
         fprintf(stderr, "%s:%d failed to parse double: %s\n", __FILE__, __LINE__, buf);

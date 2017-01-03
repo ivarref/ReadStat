@@ -27,7 +27,7 @@ readstat_label_set_t * get_label_set(const char *val_labels, struct context *ctx
     }
     readstat_label_set_t * lbl = &ctx->label_set[ctx->variable_count-1];
     memset(lbl, 0, sizeof(readstat_label_set_t));
-    snprintf(lbl->name, sizeof(lbl->name)-1, "%s", val_labels);
+    snprintf(lbl->name, sizeof(lbl->name), "%s", val_labels);
     return lbl;
 }
 

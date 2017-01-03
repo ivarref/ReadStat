@@ -13,7 +13,7 @@
 double get_dta_days_from_token(const char *js, jsmntok_t* token) {
     char buf[255];
     int len = token->end - token->start;
-    snprintf(buf, sizeof(buf)-1, "%.*s", len, js + token->start);
+    snprintf(buf, sizeof(buf), "%.*s", len, js + token->start);
     char* dest;
     int days = readstat_dta_num_days(buf, &dest);
     if (dest == buf) {

@@ -18,7 +18,7 @@ void test_dta_dates() {
         for (int month=0; month<12; month++) {
             int max_days = is_leap(yr) ? daysPerMonthLeap[month] : daysPerMonth[month];
             for (int days=1; days<=max_days; days++) {
-                snprintf(buf, sizeof(buf)-1, "%04d-%02d-%02d", yr, month+1, days);
+                snprintf(buf, sizeof(buf), "%04d-%02d-%02d", yr, month+1, days);
                 char *dest;
                 int numdays = readstat_dta_num_days(buf, &dest);
                 if (dest == buf) {

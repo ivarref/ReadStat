@@ -53,7 +53,7 @@ char* get_object_property(const char *js, jsmntok_t *t, const char* propname, ch
 	if (!tok) {
 		return NULL;
 	}
-	snprintf(dest, size-1, "%.*s", tok->end-tok->start, js+tok->start);
+	snprintf(dest, size, "%.*s", tok->end-tok->start, js+tok->start);
 	return dest;
 }
 
@@ -109,7 +109,7 @@ char* copy_variable_property(struct json_metadata* md, const char* varname, cons
 	if (len == 0) {
 		return NULL;
 	}
-	snprintf(dest, maxsize-1, "%.*s", len, md->js+tok->start);
+	snprintf(dest, maxsize, "%.*s", len, md->js+tok->start);
 
 	return dest;
 }
@@ -155,7 +155,7 @@ int missing_double_idx(struct json_metadata* md, const char* varname, double v) 
 		jsmntok_t* value = values+j;
 		int len = value->end - value->start;
 		char tmp[1024];
-		snprintf(tmp, sizeof(tmp)-1, "%.*s", len, md->js + value->start);
+		snprintf(tmp, sizeof(tmp), "%.*s", len, md->js + value->start);
 		char *dest;
 		double vv = strtod(tmp, &dest);
 		if (dest == tmp) {
@@ -209,7 +209,7 @@ double get_double_from_token(const char *js, jsmntok_t* token) {
 	char buf[255];
     char *dest;
     int len = token->end - token->start;
-    snprintf(buf, sizeof(buf)-1, "%.*s", len, js + token->start);
+    snprintf(buf, sizeof(buf), "%.*s", len, js + token->start);
     double val = strtod(buf, &dest);
     if (buf == dest) {
         fprintf(stderr, "%s:%d failed to parse double: %s\n", __FILE__, __LINE__, buf);
