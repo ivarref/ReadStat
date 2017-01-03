@@ -50,7 +50,7 @@ const char *format_name(int format) {
         return "SAS catalog file (SAS7BCAT)";
     
     if (format == RS_FORMAT_CSV)
-        return "CSV (NSD)";
+        return "CSV";
 
     if (format == RS_FORMAT_XPORT)
         return "SAS transport file (XPORT)";
