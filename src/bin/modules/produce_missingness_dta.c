@@ -110,14 +110,12 @@ void produce_missingness_range_dta(struct csv_metadata *c, jsmntok_t* missing, c
             double hi = is_date ? get_dta_days_from_token(js, high) : get_double_from_token(js, high);
             if (cod >= lo && cod <= hi) {
                 is_date ? dta_add_missing_date(var, cod) : dta_add_missing_double(var, cod);
-                // printf("%s:%d produce_missingness: Adding missing for code %lf => %c\n", __FILE__, __LINE__, cod, tag);
             }
         }
         if (discrete) {
             double v = is_date ? get_dta_days_from_token(js, discrete) : get_double_from_token(js, discrete);
             if (cod == v) {
                 is_date ? dta_add_missing_date(var, cod) : dta_add_missing_double(var, cod);
-                // printf("%s:%d produce_missingness: Adding missing for code %lf => %c\n", __FILE__, __LINE__, cod, tag);
             }
         }
         j += slurp_object(tok);
@@ -143,7 +141,6 @@ void produce_missingness_discrete_dta(struct csv_metadata *c, jsmntok_t* missing
         } else if (var->type == READSTAT_TYPE_DOUBLE) {
             dta_add_missing_double(var, get_double_from_token(js, missing_value_token));
         } else if (var->type == READSTAT_TYPE_STRING) {
-            // fprintf(stderr, "%s:%d Pass %d Warning: Ignoring missing discrete string value '%.*s' for column '%s'\n", __FILE__, __LINE__, c->pass, missing_value_token->end - missing_value_token->start, js + missing_value_token->start, column);
         } else {
             fprintf(stderr, "%s:%d Unsupported column type %d\n", __FILE__, __LINE__, var->type);
             exit(EXIT_FAILURE);

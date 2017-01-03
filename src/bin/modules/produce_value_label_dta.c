@@ -62,7 +62,6 @@ void produce_value_label_double_dta(const char* column, struct csv_metadata *c, 
             }
         }
     }
-    // fprintf(stdout, "adding value label %lf with label %s. tag => %c\n", v, label, value.tag);
     c->parser->value_label_handler(column, value, label, c->user_ctx);
 }
 
@@ -92,7 +91,6 @@ void produce_value_label_dta(struct csv_metadata *c, const char* column) {
         } else if (coltype == READSTAT_TYPE_DOUBLE) {
             produce_value_label_double_dta(column, c, code, label);
         } else if (coltype == READSTAT_TYPE_STRING) {
-            // fprintf(stderr, "%s:%d DTA warning: Ignoring string value code %s => label %s for column %s\n", __FILE__, __LINE__, code, label, column);
         } else {
             fprintf(stderr, "%s:%d unsupported column type %d for value label for column %s\n", __FILE__, __LINE__, coltype, column);
             exit(EXIT_FAILURE);

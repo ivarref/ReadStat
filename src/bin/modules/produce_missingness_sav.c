@@ -26,25 +26,6 @@ double get_double_date_missing_sav(const char *js, jsmntok_t* missing_value_toke
     return val;
 }
 
-// void produce_missingness_string_discrete_sav(struct csv_metadata *c, readstat_variable_t* variable, jsmntok_t* missing_value_token, const char* column) {
-//     const char *js = c->json_md->js;
-//     int i = readstat_variable_get_missing_ranges_count(variable);
-//     if (2*i < sizeof(variable->missingness.missing_ranges)/sizeof(variable->missingness.missing_ranges[0])) {
-//         int str_len = missing_value_token->end - missing_value_token->start;
-//         int buf_len = str_len+1;
-//         char *copy = calloc(buf_len, sizeof(char)); // TODO: free buffer
-//         snprintf(copy, buf_len, "%.*s", str_len, js + missing_value_token->start);
-//         readstat_value_t value = { .v = { .string_value = copy }, .type = READSTAT_TYPE_STRING };
-//         variable->missingness.missing_ranges[2*i] = value;
-//         variable->missingness.missing_ranges[2*i+1] = value;
-//         variable->missingness.missing_ranges_count++;
-//         printf("pass %d producing string missing value >>%s<< i = %d\n", c->pass, copy, i);
-//     } else {
-//         fprintf(stderr, "%s:%d out of space for missing values\n", __FILE__, __LINE__);
-//         exit(EXIT_FAILURE);
-//     }
-// }
-
 void produce_missingness_discrete_sav(struct csv_metadata *c, jsmntok_t* missing, const char* column) {
     readstat_variable_t* var = &c->variables[c->columns];
     int is_date = c->is_date[c->columns];
@@ -64,7 +45,6 @@ void produce_missingness_discrete_sav(struct csv_metadata *c, jsmntok_t* missing
         } else if (var->type == READSTAT_TYPE_DOUBLE) {
             readstat_variable_add_missing_double_value(var, get_double_from_token(js, missing_value_token));
         } else if (var->type == READSTAT_TYPE_STRING) {
-            // fprintf(stderr, "%s:%d Pass %d Warning: Ignoring missing discrete string value '%.*s' for column '%s'\n", __FILE__, __LINE__, c->pass, missing_value_token->end - missing_value_token->start, js + missing_value_token->start, column);
         } else {
             fprintf(stderr, "%s:%d Unsupported column type %d\n", __FILE__, __LINE__, var->type);
             exit(EXIT_FAILURE);
