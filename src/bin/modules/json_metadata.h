@@ -25,10 +25,10 @@ unsigned char get_separator(struct json_metadata* md);
 int missing_double_idx(struct json_metadata* md, const char* varname, double v);
 int missing_string_idx(struct json_metadata* md, const char* varname, char* v);
 char* copy_variable_property(struct json_metadata* md, const char* varname, const char* property, char* dest, size_t maxsize);
+char* get_object_property(const char *js, jsmntok_t *t, const char* propname, char* dest, size_t size);
 jsmntok_t* find_variable_property(const char *js, jsmntok_t *t, const char* varname, const char* property);
 int slurp_object(jsmntok_t *t);
 jsmntok_t* find_object_property(const char *js, jsmntok_t *t, const char* propname);
-char* get_object_property(const char *js, jsmntok_t *t, const char* propname, char* dest, size_t size);
 int match_token(const char *js, jsmntok_t *tok, const char* name);
 
 double get_double_from_token(const char *js, jsmntok_t* token);

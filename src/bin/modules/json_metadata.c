@@ -48,13 +48,33 @@ jsmntok_t* find_object_property(const char *js, jsmntok_t *t, const char* propna
     return 0;
 }
 
+char* copy_token_to_char(const char *js, jsmntok_t *tok, char* dest, size_t size) {
+	int maxlen = tok->end-tok->start;
+	const char* buf = js+tok->start;
+	
+	int prev_was_forward_slash = 0;
+	int dest_idx = 0;
+	for (int i=0; i<size && i<maxlen; i++) {
+		char c = buf[i];
+		if (c == '\\' && prev_was_forward_slash==0) {
+			prev_was_forward_slash = 1;
+			continue;
+		} else if (prev_was_forward_slash) {
+			prev_was_forward_slash = 0;
+		}
+		dest[dest_idx] = c;
+		dest_idx++;
+	}
+	dest[dest_idx] = '\0';
+	return dest;
+}
+
 char* get_object_property(const char *js, jsmntok_t *t, const char* propname, char* dest, size_t size) {
 	jsmntok_t* tok = find_object_property(js, t, propname);
 	if (!tok) {
 		return NULL;
 	}
-	snprintf(dest, size, "%.*s", tok->end-tok->start, js+tok->start);
-	return dest;
+	return copy_token_to_char(js, tok, dest, size);
 }
 
 unsigned char get_separator(struct json_metadata* md) {
@@ -109,9 +129,7 @@ char* copy_variable_property(struct json_metadata* md, const char* varname, cons
 	if (len == 0) {
 		return NULL;
 	}
-	snprintf(dest, maxsize, "%.*s", len, md->js+tok->start);
-
-	return dest;
+	return copy_token_to_char(md->js, tok, dest, maxsize);
 }
 
 int missing_string_idx(struct json_metadata* md, const char* varname, char* v) {
