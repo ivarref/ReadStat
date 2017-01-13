@@ -80,7 +80,8 @@ void add_val_labels(struct context *ctx, readstat_variable_t *variable, const ch
             free(lbl);
         } else if (variable->type == READSTAT_TYPE_DOUBLE && ctx->input_format == RS_FORMAT_SAV) {
             char* lbl = quote_and_escape(value_label->label);
-            fprintf(ctx->fp, "{ \"code\": %lf, \"label\": %s} ", value_label->double_key, lbl);
+            int k = value_label->double_key;
+            fprintf(ctx->fp, "{ \"code\": %d, \"label\": %s} ", k, lbl);
             free(lbl);
         } else if (variable->type == READSTAT_TYPE_STRING) {
             char* lbl = quote_and_escape(value_label->label);
